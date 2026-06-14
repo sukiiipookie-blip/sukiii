@@ -68,18 +68,20 @@
       width: 5px;
       height: 5px;
       flex-shrink: 0;
-      animation: pulse 3s ease-in-out infinite;
+      animation: pulse 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
       transform-origin: center;
+      filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 6px rgba(255, 179, 230, 0.6));
     }
     @keyframes pulse {
-      0%   { transform: scale(1) rotate(0deg);    opacity: 0.3; }
-      25%  { transform: scale(1.2) rotate(5deg);  opacity: 0.8; }
-      50%  { transform: scale(1.4) rotate(-5deg); opacity: 1; }
-      75%  { transform: scale(1.1) rotate(3deg);  opacity: 0.6; }
-      100% { transform: scale(1) rotate(0deg);    opacity: 0.3; }
+      0%   { transform: scale(1) rotate(0deg);       opacity: 0.4; filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.4)) drop-shadow(0 0 4px rgba(255, 179, 230, 0.2)); }
+      20%  { transform: scale(1.3) rotate(8deg);    opacity: 1; filter: drop-shadow(0 0 6px rgba(255, 255, 255, 1)) drop-shadow(0 0 12px rgba(255, 179, 230, 0.8)); }
+      40%  { transform: scale(1.5) rotate(-8deg);   opacity: 0.9; filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 14px rgba(255, 179, 230, 0.7)); }
+      60%  { transform: scale(1.2) rotate(6deg);    opacity: 0.7; filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.7)) drop-shadow(0 0 10px rgba(255, 179, 230, 0.5)); }
+      80%  { transform: scale(1.1) rotate(-4deg);   opacity: 0.5; filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5)) drop-shadow(0 0 6px rgba(255, 179, 230, 0.3)); }
+      100% { transform: scale(1) rotate(0deg);       opacity: 0.4; filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.4)) drop-shadow(0 0 4px rgba(255, 179, 230, 0.2)); }
     }
     @media (prefers-reduced-motion: reduce) {
-      .heart svg { animation: none; opacity: 0.4; }
+      .heart svg { animation: none; opacity: 0.6; filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6)); }
     }
     #enter-screen {
       position: fixed;
@@ -883,8 +885,9 @@
     for (let i = 0; i < cols * rows; i++) {
       const cell = document.createElement('div');
       cell.className = 'heart';
-      cell.innerHTML = `<svg viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 7C4 7 1 5 1 3a2 2 0 0 1 4 0c0 0 0 0 0 0a2 2 0 0 1 4 0c0 2-3 4-3 4z" fill="#ffffff" stroke="#ffb3e6" stroke-width="0.5"/></svg>`;
-      cell.querySelector('svg').style.animationDelay = `${Math.random() * 3}s`;
+      cell.innerHTML = `<svg viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 7C4 7 1 5 1 3a2 2 0 0 1 4 0c0 0 0 0 0 0a2 2 0 0 1 4 0c0 2-3 4-3 4z" fill="#ffffff" stroke="#ffffff" stroke-width="0.5"/></svg>`;
+      const randomDelay = Math.random() * 2;
+      cell.querySelector('svg').style.animationDelay = `${randomDelay}s`;
       grid.appendChild(cell);
     }
     const canvas = document.getElementById('heart-canvas');
