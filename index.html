@@ -45,43 +45,45 @@
       z-index: 0;
       pointer-events: none;
       overflow: hidden;
-      background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.05), transparent 14%),
-                  radial-gradient(circle at 70% 30%, rgba(255, 120, 255, 0.08), transparent 18%);
+      background: linear-gradient(180deg, 
+        #1a0033 0%,
+        #4a1a7f 25%,
+        #ff6b9d 50%,
+        #ffa500 70%,
+        #ffccaa 100%);
+      animation: sunsetShift 8s ease-in-out infinite;
     }
-    #heart-grid {
-      position: fixed;
-      inset: 0;
-      display: grid;
-      overflow: hidden;
-      pointer-events: none;
-      z-index: 0;
+    @keyframes sunsetShift {
+      0%, 100% { background: linear-gradient(180deg, #1a0033 0%, #4a1a7f 25%, #ff6b9d 50%, #ffa500 70%, #ffccaa 100%); }
+      50% { background: linear-gradient(180deg, #2a0055 0%, #6a2a9f 25%, #ff8aad 50%, #ffb84d 70%, #ffe0cc 100%); }
     }
-    .heart {
-      width: 10px;
-      height: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
+    .sparkle {
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      background: #ffff99;
+      border-radius: 50%;
+      opacity: 0;
+      animation: twinkle 3s infinite;
+      box-shadow: 0 0 8px #ffff99;
     }
-    .heart svg {
-      width: 5px;
-      height: 5px;
-      flex-shrink: 0;
-      animation: pulse 2s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite;
-      transform-origin: center;
-      filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 6px rgba(255, 179, 230, 0.6));
+    @keyframes twinkle {
+      0%, 100% { opacity: 0; transform: translateY(0) scale(0.5); }
+      50% { opacity: 1; transform: translateY(-30px) scale(1); }
     }
-    @keyframes pulse {
-      0%   { transform: scale(1) rotate(0deg);       opacity: 0.4; filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.4)) drop-shadow(0 0 4px rgba(255, 179, 230, 0.2)); }
-      20%  { transform: scale(1.3) rotate(8deg);    opacity: 1; filter: drop-shadow(0 0 6px rgba(255, 255, 255, 1)) drop-shadow(0 0 12px rgba(255, 179, 230, 0.8)); }
-      40%  { transform: scale(1.5) rotate(-8deg);   opacity: 0.9; filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 14px rgba(255, 179, 230, 0.7)); }
-      60%  { transform: scale(1.2) rotate(6deg);    opacity: 0.7; filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.7)) drop-shadow(0 0 10px rgba(255, 179, 230, 0.5)); }
-      80%  { transform: scale(1.1) rotate(-4deg);   opacity: 0.5; filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5)) drop-shadow(0 0 6px rgba(255, 179, 230, 0.3)); }
-      100% { transform: scale(1) rotate(0deg);       opacity: 0.4; filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.4)) drop-shadow(0 0 4px rgba(255, 179, 230, 0.2)); }
+    .silhouette {
+      position: absolute;
+      bottom: -5%;
+      right: 8%;
+      width: 280px;
+      height: 350px;
+      opacity: 0.4;
+      filter: drop-shadow(0 0 20px rgba(255, 107, 157, 0.5));
     }
-    @media (prefers-reduced-motion: reduce) {
-      .heart svg { animation: none; opacity: 0.6; filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.6)); }
+    .silhouette svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3));
     }
     #enter-screen {
       position: fixed;
@@ -220,6 +222,7 @@
       letter-spacing: 0.04em;
       background: linear-gradient(135deg, #ff4ffc, #ffb3ff, #e389ff, #ff82e7);
       background-size: 250% 250%;
+      background-clip: text;
       -webkit-background-clip: text;
       color: transparent;
       text-shadow: 0 0 24px rgba(255, 120, 255, 0.32);
@@ -699,10 +702,25 @@
   </style>
 </head>
 <body>
-  <div id="background"><canvas id="heart-canvas"></canvas></div>
-  <div id="heart-grid"></div>
+  <div id="background">
+    <div class="silhouette">
+      <svg viewBox="0 0 100 150" xmlns="http://www.w3.org/2000/svg">
+        <!-- Girl silhouette -->
+        <ellipse cx="50" cy="25" rx="15" ry="18" fill="#000" opacity="0.6"/>
+        <path d="M 50 43 Q 35 50 32 75 L 28 140 Q 28 145 35 145 L 38 75 Q 45 68 50 70 Q 55 68 62 75 L 65 145 Q 72 145 72 140 L 68 75 Q 65 50 50 43 Z" fill="#000" opacity="0.5"/>
+        <path d="M 32 52 Q 20 60 15 85" stroke="#000" stroke-width="3" fill="none" opacity="0.4" stroke-linecap="round"/>
+        <path d="M 68 52 Q 80 60 85 85" stroke="#000" stroke-width="3" fill="none" opacity="0.4" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="sparkle" style="left: 10%; top: 20%; animation-delay: 0s;"></div>
+    <div class="sparkle" style="left: 20%; top: 15%; animation-delay: 1s;"></div>
+    <div class="sparkle" style="left: 85%; top: 25%; animation-delay: 0.5s;"></div>
+    <div class="sparkle" style="left: 75%; top: 35%; animation-delay: 1.5s;"></div>
+    <div class="sparkle" style="left: 15%; top: 45%; animation-delay: 2s;"></div>
+    <div class="sparkle" style="left: 90%; top: 50%; animation-delay: 1.2s;"></div>
+  </div>
   <div id="enter-screen">
-    <div id="enter-text">Click to enter<br>the cute world</div>
+    <div id="enter-text">Click to enter<br>sukiii.xyz</div>
   </div>
   <div class="page" id="main-page">
     <div class="card">
@@ -712,11 +730,11 @@
           <div class="profile-meta">
             <div class="page-title"><span>Roles</span> ✨ Owner · MVP · Female · DBD · RE</div>
             <div class="roles">
-                <div class="role-label" data-tooltip="Server owner & leader">✨ Owner</div>
+                <div class="role-label" data-tooltip="Sebastian?">✨ Owned By Sebastian</div>
               <div class="role-label" data-tooltip="Trusted MVP team member">🌸 MVP</div>
-              <div class="role-label" data-tooltip="She/Her vibes only">💕 Female</div>
+              <div class="role-label" data-tooltip="She/Her">💕 Female</div>
               <div class="role-label" data-tooltip="Dead by Daylight fan">🖤 DBD</div>
-              <div class="role-label" data-tooltip="Resident Evil content">🎮 RE</div>
+              <div class="role-label" data-tooltip="Resident Evil">🎮 RE</div>
             </div>
           </div>
           <div class="social-row">
@@ -737,7 +755,7 @@
         <div class="hero-right">
           <div class="profile-title">NekiraBelle (Suki)</div>
           <div class="badge-row">
-            <span class="badge">Owner</span>
+            <span class="badge">Owned By Sebastian!</span>
             <span class="badge">MVP</span>
             <span class="badge">Female</span>
             <span class="badge">DBD</span>
@@ -774,9 +792,9 @@
         </div>
       </div>
       <div class="section info-buttons">
-        <button class="info-button" id="heart-page-btn">💗 Message grid</button>
+        <button class="info-button" id="heart-page-btn">💗 Sebastian</button>
         <button class="info-button" id="promo-btn">✨ Open promo</button>
-        <button class="info-button" id="custom-text-btn">🌸 Customize text</button>
+        <button class="info-button" id="custom-text-btn">🌸</button>
       </div>
     </div>
   </div>
@@ -784,13 +802,13 @@
     <button class="back-arrow" id="promo-back">← Back</button>
     <div class="card">
       <div class="section">
-        <div class="page-title"><span>Promo</span> Cute campaign page</div>
+        <div class="page-title"><span>Promo</span> Nyxia.cc</div>
         <h2 style="margin:16px 0 12px; font-size:2.1rem;">Nyxia - Stay ahead</h2>
         <p style="color: var(--muted); line-height:1.85; max-width:760px;">Join the ELITE gamers and stay ahead of the curve with Nyxia's latest products! Stay unlocked + protected with Nyxia's!</p>
       </div>
       <div class="section spotlight">
         <div class="spotlight-card">
-          <h2>Promo power</h2>
+          <h2>Nyxia.cc</h2>
           <p>Nyxia's latest products are designed to give you the edge you need to stay ahead of the competition!</p>
           <p style="margin-top:16px; color: #ffcdfc;"><strong>Suggestion:</strong> Nyxia HWID spoofer + Nyxia Unlocker! *More in the future* </p>
         </div>
@@ -812,7 +830,7 @@
     <div class="card">
       <div class="section">
         <div class="page-title"><span>Heart</span> Sebastian page</div>
-        <h2 style="margin:16px 0 12px; font-size:2.1rem;">Cute heart grid with custom text</h2>
+        <h2 style="margin:16px 0 12px; font-size:2.1rem;">ILoveYouSebastian</h2>
         <p style="color: var(--muted); line-height:1.85; max-width:760px;">This page has white heart outlines that pulse, falling hearts in the text preview, and a live custom message box. It is made to feel charming and easy to use.</p>
       </div>
       <div class="heart-page">
@@ -876,73 +894,6 @@
       }
     }
     typeEffect();
-    const grid = document.getElementById('heart-grid');
-    const size = 10;
-    const cols = Math.ceil(window.innerWidth / size);
-    const rows = Math.ceil(window.innerHeight / size);
-    grid.style.gridTemplateColumns = `repeat(${cols}, ${size}px)`;
-    grid.style.gridTemplateRows = `repeat(${rows}, ${size}px)`;
-    for (let i = 0; i < cols * rows; i++) {
-      const cell = document.createElement('div');
-      cell.className = 'heart';
-      cell.innerHTML = `<svg viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 7C4 7 1 5 1 3a2 2 0 0 1 4 0c0 0 0 0 0 0a2 2 0 0 1 4 0c0 2-3 4-3 4z" fill="#ffffff" stroke="#ffffff" stroke-width="0.5"/></svg>`;
-      const randomDelay = Math.random() * 2;
-      cell.querySelector('svg').style.animationDelay = `${randomDelay}s`;
-      grid.appendChild(cell);
-    }
-    const canvas = document.getElementById('heart-canvas');
-    const ctx = canvas.getContext('2d');
-    let hearts = [];
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-    class Heart {
-      constructor() {
-        this.reset();
-      }
-      reset() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
-        this.size = 18 + Math.random() * 42;
-        this.speed = 0.2 + Math.random() * 0.45;
-        this.opacity = 0.08 + Math.random() * 0.18;
-        this.hue = 300 + Math.random() * 60;
-        this.phase = Math.random() * Math.PI * 2;
-      }
-      update() {
-        this.y -= this.speed;
-        this.phase += 0.01;
-        if (this.y < -this.size) {
-          this.reset();
-          this.y = canvas.height + this.size;
-        }
-      }
-      draw() {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(Math.sin(this.phase) * 0.15);
-        ctx.font = `${this.size}px serif`;
-        ctx.fillStyle = `hsla(${this.hue}, 84%, 77%, ${this.opacity})`;
-        ctx.fillText('❤', 0, 0);
-        ctx.restore();
-      }
-    }
-    function initHearts() {
-      hearts = Array.from({ length: 40 }, () => new Heart());
-    }
-    function animateHearts() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      hearts.forEach(heart => { heart.update(); heart.draw(); });
-      requestAnimationFrame(animateHearts);
-    }
-    window.addEventListener('resize', () => {
-      resizeCanvas();
-      initHearts();
-    });
-    resizeCanvas();
-    initHearts();
-    animateHearts();
     const audio = document.getElementById('audio-player');
     audio.volume = 0.18;
     const playButton = document.getElementById('play-pause-btn');
