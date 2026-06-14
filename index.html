@@ -14,6 +14,8 @@
       --accent-soft: rgba(255, 98, 255, 0.18);
       --text: #f8f1ff;
       --muted: rgba(255, 255, 255, 0.72);
+      --heart-size: 5px;
+      --gap: 5px;
     }
     * {
       margin: 0;
@@ -46,29 +48,21 @@
       background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.05), transparent 14%),
                   radial-gradient(circle at 70% 30%, rgba(255, 120, 255, 0.08), transparent 18%);
     }
-    :root {
-      --heart-size: 10px;
-      --gap: 5px;
-    }
     #heart-grid {
       position: fixed;
       inset: 0;
-      z-index: 0;
       display: grid;
-      grid-template-columns: repeat(16, 1fr);
-      grid-template-rows: repeat(10, 1fr);
-      gap: var(--gap);
-      pointer-events: none;
       overflow: hidden;
+      pointer-events: none;
+      z-index: 0;
     }
     .heart {
-      width: var(--heart-size);
-      height: var(--heart-size);
+      width: 10px;
+      height: 10px;
       display: flex;
       align-items: center;
       justify-content: center;
-      justify-self: center;
-      align-self: center;
+      overflow: hidden;
     }
     .heart svg {
       width: 5px;
@@ -78,10 +72,10 @@
       transform-origin: center;
     }
     @keyframes pulse {
-      0% { transform: scale(1); opacity: 0.4; }
-      35% { transform: scale(1.3); opacity: 0.9; }
-      65% { transform: scale(0.92); opacity: 0.55; }
-      100% { transform: scale(1); opacity: 0.4; }
+      0%   { transform: scale(1);    opacity: 0.4; }
+      35%  { transform: scale(1.3);  opacity: 0.9; }
+      65%  { transform: scale(0.92); opacity: 0.55; }
+      100% { transform: scale(1);    opacity: 0.4; }
     }
     @media (prefers-reduced-motion: reduce) {
       .heart svg { animation: none; opacity: 0.4; }
@@ -301,9 +295,8 @@
       background: linear-gradient(135deg, rgba(255, 43, 139, 0.28), rgba(255, 184, 255, 0.16));
     }
     .social-link.tiktok svg {
-      width: 24px;
-      height: 24px;
-      transform: scale(1.05);
+      width: 22px;
+      height: 22px;
     }
     .social-link.discord {
       background: linear-gradient(135deg, rgba(79, 84, 255, 0.18), rgba(177, 147, 255, 0.14));
@@ -552,30 +545,8 @@
       color: #ffbeff;
     }
     .heart-page {
-      display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 28px;
       padding: 32px;
     }
-    .heart-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(74px, 1fr));
-      gap: 16px;
-    }
-    .heart-item {
-      min-height: 86px;
-      border-radius: 26px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      background: rgba(255, 255, 255, 0.03);
-      display: grid;
-      place-items: center;
-      font-size: 1.8rem;
-      color: #fff;
-      text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
-      animation: pulseHeart 3.2s ease-in-out infinite;
-    }
-    .heart-item:nth-child(2n) { animation-duration: 2.7s; }
-    .heart-item:nth-child(3n) { animation-duration: 3.6s; }
     .custom-box {
       position: relative;
       border-radius: 28px;
@@ -590,24 +561,6 @@
       inset: 0;
       background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.08), transparent 24%);
       pointer-events: none;
-    }
-    .custom-box h3 {
-      font-size: 1.35rem;
-      margin-bottom: 18px;
-    }
-    .custom-box textarea {
-      width: 100%;
-      min-height: 170px;
-      resize: vertical;
-      border-radius: 22px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      background: rgba(0, 0, 0, 0.28);
-      color: #fff;
-      padding: 18px;
-      line-height: 1.7;
-      outline: none;
-      font-size: 1rem;
-      box-shadow: inset 0 0 16px rgba(255, 80, 255, 0.08);
     }
     .preview-card {
       margin-top: 16px;
@@ -727,7 +680,7 @@
       .hero { grid-template-columns: 1fr; text-align: center; }
       .hero-left, .hero-right { align-items: center; }
       .music-panel { grid-template-columns: 1fr; }
-      .heart-page { grid-template-columns: 1fr; }
+      .heart-page { padding: 20px; }
       .spotlight { grid-template-columns: 1fr; }
     }
     @media (max-width: 680px) {
@@ -765,8 +718,8 @@
           </div>
           <div class="social-row">
             <a href="https://www.tiktok.com/@nekirabelle" target="_blank" class="social-link tiktok">
-              <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M20.4 7.2a5.93 5.93 0 0 1-3.7-1.3v8.5a5.9 5.9 0 1 1-5.9-5.9h1.9v2.1a4 4 0 1 0 4 4V7.3a7.9 7.9 0 0 1-2.1-.3v3.9a7.9 7.9 0 1 0 7.9 7.9V7.2z"/></svg>
-              <span class="tooltip">TikTok</span>
+              <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/></svg>
+              <span class="tooltip">Music</span>
             </a>
             <a href="https://discord.gg/nyxia" target="_blank" class="social-link discord">
               <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
@@ -809,7 +762,7 @@
             <button class="control-button" id="play-pause-btn">Play</button>
             <div class="volume-wrap">
               <label for="volume-slider">Volume</label>
-              <input id="volume-slider" class="volume-slider" type="range" min="0" max="1" step="0.01" value="0.18" />
+              <input id="volume-slider" class="volume-slider" type="range" min="0" max="1" step="0.01" value="0.28" />
             </div>
           </div>
         </div>
@@ -860,41 +813,16 @@
         <p style="color: var(--muted); line-height:1.85; max-width:760px;">This page has white heart outlines that pulse, falling hearts in the text preview, and a live custom message box. It is made to feel charming and easy to use.</p>
       </div>
       <div class="heart-page">
-        <div>
-          <div class="page-title"><span>Grid</span> Heart outlines</div>
-          <div class="heart-grid">
-            <div class="heart-item" style="--i:0">♡</div>
-            <div class="heart-item" style="--i:1">♡</div>
-            <div class="heart-item" style="--i:2">♡</div>
-            <div class="heart-item" style="--i:3">♡</div>
-            <div class="heart-item" style="--i:4">♡</div>
-            <div class="heart-item" style="--i:5">♡</div>
-            <div class="heart-item" style="--i:6">♡</div>
-            <div class="heart-item" style="--i:7">♡</div>
-            <div class="heart-item" style="--i:8">♡</div>
-            <div class="heart-item" style="--i:9">♡</div>
-            <div class="heart-item" style="--i:10">♡</div>
-            <div class="heart-item" style="--i:11">♡</div>
-            <div class="heart-item" style="--i:12">♡</div>
-            <div class="heart-item" style="--i:13">♡</div>
-            <div class="heart-item" style="--i:14">♡</div>
-            <div class="heart-item" style="--i:15">♡</div>
-            <div class="heart-item" style="--i:16">♡</div>
-            <div class="heart-item" style="--i:17">♡</div>
-          </div>
-        </div>
         <div class="custom-box">
-          <h3>Write your own message</h3>
-          <textarea id="custom-text">I love you DADDY, Sebastian 💖! You're truly very important and special to me. Thank you for everything! </textarea>
           <div class="preview-card">
             <div class="falling-hearts" id="falling-hearts"></div>
-            <p id="preview-text">I love you, Sebastian 💖</p>
+            <p id="preview-text">I love you DADDY, Sebastian 💖! You're truly very important and special to me. Thank you for everything!</p>
           </div>
         </div>
       </div>
     </div>
   </div>
-  <audio id="audio-player" loop preload="auto">
+  <audio id="audio-player" loop>
     <source src="Foo Fighters - Everlong (Lyrics).mp3" type="audio/mp3">
   </audio>
   <script>
@@ -945,19 +873,19 @@
       }
     }
     typeEffect();
-    function buildHeartGrid() {
-      const heartGrid = document.getElementById('heart-grid');
-      heartGrid.innerHTML = '';
-      for (let i = 0; i < 160; i += 1) {
-        const heart = document.createElement('div');
-        heart.className = 'heart';
-        heart.style.opacity = 0.15 + Math.random() * 0.18;
-        heart.style.animationDelay = `${Math.random() * 3}s`;
-        heart.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21s-7.5-4.35-7.5-10.5S6.5 3 12 7.5 19.5 3 19.5 10.5 12 21 12 21Z" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" fill="none"/></svg>`;
-        heartGrid.appendChild(heart);
-      }
+    const grid = document.getElementById('heart-grid');
+    const size = 10;
+    const cols = Math.ceil(window.innerWidth / size);
+    const rows = Math.ceil(window.innerHeight / size);
+    grid.style.gridTemplateColumns = `repeat(${cols}, ${size}px)`;
+    grid.style.gridTemplateRows = `repeat(${rows}, ${size}px)`;
+    for (let i = 0; i < cols * rows; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'heart';
+      cell.innerHTML = `<svg viewBox="0 0 8 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 7C4 7 1 5 1 3a2 2 0 0 1 4 0c0 0 0 0 0 0a2 2 0 0 1 4 0c0 2-3 4-3 4z" fill="#b388ff"/></svg>`;
+      cell.querySelector('svg').style.animationDelay = `${Math.random() * 3}s`;
+      grid.appendChild(cell);
     }
-    buildHeartGrid();
     const canvas = document.getElementById('heart-canvas');
     const ctx = canvas.getContext('2d');
     let hearts = [];
@@ -1079,14 +1007,8 @@
       if (!analyser) createVisualizer();
     });
     createVisualizer();
-    const customText = document.getElementById('custom-text');
     const previewText = document.getElementById('preview-text');
     const fallingHearts = document.getElementById('falling-hearts');
-    function updatePreview() {
-      previewText.textContent = customText.value || 'I love you, Sebastian 💖';
-    }
-    customText.addEventListener('input', updatePreview);
-    updatePreview();
     function createFallingHearts() {
       fallingHearts.innerHTML = '';
       for (let i = 0; i < 12; i++) {
