@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Suki | Cute Neon Profile</title>
+  <title>Suki | Welcomeeee!</title>
   <style>
     :root {
       color-scheme: dark;
@@ -46,22 +46,29 @@
       background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.05), transparent 14%),
                   radial-gradient(circle at 70% 30%, rgba(255, 120, 255, 0.08), transparent 18%);
     }
+    :root {
+      --heart-size: 10px;
+      --gap: 5px;
+    }
     #heart-grid {
       position: fixed;
       inset: 0;
       z-index: 0;
       display: grid;
-      gap: 18px;
-      overflow: hidden;
+      grid-template-columns: repeat(16, 1fr);
+      grid-template-rows: repeat(10, 1fr);
+      gap: var(--gap);
       pointer-events: none;
+      overflow: hidden;
     }
     .heart {
-      width: 10px;
-      height: 10px;
+      width: var(--heart-size);
+      height: var(--heart-size);
       display: flex;
       align-items: center;
       justify-content: center;
-      overflow: hidden;
+      justify-self: center;
+      align-self: center;
     }
     .heart svg {
       width: 5px;
@@ -172,6 +179,7 @@
       justify-content: center;
     }
     .role-label {
+      position: relative;
       background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(255, 110, 255, 0.12));
       border: 1px solid rgba(255, 120, 255, 0.24);
       border-radius: 999px;
@@ -180,6 +188,28 @@
       letter-spacing: 0.02em;
       color: #fff;
       box-shadow: 0 0 18px rgba(255, 110, 255, 0.14);
+      cursor: default;
+    }
+    .role-label::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      bottom: calc(100% + 10px);
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.95);
+      color: #240035;
+      font-size: 0.75rem;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.18s ease, transform 0.18s ease;
+      box-shadow: 0 0 16px rgba(255, 100, 255, 0.18);
+    }
+    .role-label:hover::after {
+      opacity: 1;
+      transform: translateX(-50%) translateY(-2px);
     }
     .hero-right {
       display: flex;
@@ -188,11 +218,19 @@
     }
     .profile-title {
       font-size: clamp(2.4rem, 4vw, 3.5rem);
-      font-weight: 800;
+      font-weight: 900;
       line-height: 0.95;
-      background: linear-gradient(135deg, #ff75ff, #d09bff);
+      letter-spacing: 0.04em;
+      background: linear-gradient(135deg, #ff4ffc, #ffb3ff, #e389ff, #ff82e7);
+      background-size: 250% 250%;
       -webkit-background-clip: text;
       color: transparent;
+      text-shadow: 0 0 24px rgba(255, 120, 255, 0.32);
+      animation: shine 3.5s ease-in-out infinite;
+    }
+    @keyframes shine {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
     }
     .badge-row {
       display: flex;
@@ -253,12 +291,19 @@
       box-shadow: 0 0 28px rgba(255, 100, 255, 0.4);
     }
     .social-link svg {
-      width: 28px;
-      height: 28px;
-      filter: drop-shadow(0 0 10px rgba(255, 130, 255, 0.2));
+      width: 22px;
+      height: auto;
+      max-height: 22px;
+      display: block;
+      filter: drop-shadow(0 0 12px rgba(255, 130, 255, 0.25));
     }
     .social-link.tiktok {
-      background: linear-gradient(135deg, rgba(255, 43, 139, 0.24), rgba(255, 184, 255, 0.14));
+      background: linear-gradient(135deg, rgba(255, 43, 139, 0.28), rgba(255, 184, 255, 0.16));
+    }
+    .social-link.tiktok svg {
+      width: 24px;
+      height: 24px;
+      transform: scale(1.05);
     }
     .social-link.discord {
       background: linear-gradient(135deg, rgba(79, 84, 255, 0.18), rgba(177, 147, 255, 0.14));
@@ -269,6 +314,23 @@
     .social-link:hover {
       transform: translateY(-4px);
       box-shadow: 0 0 32px rgba(255, 115, 255, 0.35);
+    }
+    .quick-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px 18px;
+      border-radius: 24px;
+      border: 1px solid rgba(255, 110, 255, 0.28);
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      text-decoration: none;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.22s ease;
+    }
+    .quick-link:hover {
+      transform: translateY(-2px);
+      background: rgba(255, 112, 255, 0.18);
+      box-shadow: 0 0 26px rgba(255, 101, 255, 0.24);
     }
     .tooltip {
       position: absolute;
@@ -310,9 +372,6 @@
       box-shadow: inset 0 0 22px rgba(255, 70, 255, 0.08);
       overflow: hidden;
     }
-    .heart-grid {
-      grid-template-columns: repeat(6, minmax(40px, 1fr));
-    }
     .spotlight-card::before {
       content: '';
       position: absolute;
@@ -327,38 +386,6 @@
     .spotlight-card p {
       color: var(--muted);
       line-height: 1.8;
-    }
-    .arrow-box {
-      width: 96px;
-      height: 96px;
-      border-radius: 28px;
-      border: 1px solid rgba(255, 112, 255, 0.25);
-      background: linear-gradient(180deg, rgba(255, 84, 255, 0.18), rgba(255, 255, 255, 0.03));
-      display: grid;
-      place-items: center;
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
-      transition: transform 0.25s ease, box-shadow 0.25s ease;
-      box-shadow: 0 0 28px rgba(255, 90, 255, 0.18);
-    }
-    .arrow-box:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 0 36px rgba(255, 90, 255, 0.28);
-    }
-    .arrow-box::before {
-      content: '➜';
-      position: absolute;
-      font-size: 3.8rem;
-      color: rgba(255, 70, 255, 0.18);
-      top: 10px;
-      left: 16px;
-    }
-    .arrow-box span {
-      position: relative;
-      z-index: 1;
-      font-size: 2rem;
-      color: #ffcdfc;
     }
     .music-panel {
       display: grid;
@@ -618,20 +645,58 @@
       position: absolute;
       top: 24px;
       left: 24px;
-      min-width: 80px;
-      height: 46px;
-      padding: 0 14px;
-      border-radius: 18px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
+      min-width: 92px;
+      height: 48px;
+      padding: 0 16px;
+      border-radius: 26px;
+      border: 1px solid rgba(255, 106, 255, 0.28);
       display: inline-grid;
       place-items: center;
-      background: rgba(0, 0, 0, 0.45);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 90, 255, 0.18));
       color: #fff;
       font-weight: 700;
       letter-spacing: 0.04em;
       cursor: pointer;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
       z-index: 2;
+      box-shadow: 0 0 22px rgba(255, 90, 255, 0.22);
+    }
+    .back-arrow:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 28px rgba(255, 120, 255, 0.32);
+      background: linear-gradient(135deg, rgba(255, 110, 255, 0.16), rgba(255, 255, 255, 0.18));
+    }
+    .arrow-box {
+      width: 96px;
+      height: 96px;
+      border-radius: 30px;
+      border: 1px solid rgba(255, 118, 255, 0.28);
+      background: linear-gradient(145deg, rgba(255, 111, 255, 0.24), rgba(255, 255, 255, 0.1));
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+      box-shadow: 0 0 30px rgba(255, 110, 255, 0.22);
+    }
+    .arrow-box::before {
+      content: '';
+      position: absolute;
+      inset: 10px;
+      border-radius: 22px;
+      border: 1px dashed rgba(255, 255, 255, 0.16);
+    }
+    .arrow-box:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 0 50px rgba(255, 120, 255, 0.3);
+      background: linear-gradient(145deg, rgba(255, 138, 255, 0.32), rgba(255, 255, 255, 0.18));
+    }
+    .arrow-box span {
+      position: relative;
+      z-index: 1;
+      font-size: 2.4rem;
+      color: #ffcdfc;
     }
     .back-arrow:hover {
       transform: translateY(-2px);
@@ -691,11 +756,11 @@
           <div class="profile-meta">
             <div class="page-title"><span>Roles</span> ✨ Owner · MVP · Female · DBD · RE</div>
             <div class="roles">
-              <div class="role-label">✨ Owner</div>
-              <div class="role-label">🌸 MVP</div>
-              <div class="role-label">💕 Female</div>
-              <div class="role-label">🖤 DBD</div>
-              <div class="role-label">🎮 RE</div>
+                <div class="role-label" data-tooltip="Server owner & leader">✨ Owner</div>
+              <div class="role-label" data-tooltip="Trusted MVP team member">🌸 MVP</div>
+              <div class="role-label" data-tooltip="She/Her vibes only">💕 Female</div>
+              <div class="role-label" data-tooltip="Dead by Daylight fan">🖤 DBD</div>
+              <div class="role-label" data-tooltip="Resident Evil content">🎮 RE</div>
             </div>
           </div>
           <div class="social-row">
@@ -729,13 +794,13 @@
       <div class="section spotlight">
         <div class="spotlight-card">
           <h2>Promo spotlight</h2>
-          <p>Tap the glowing arrow to open the promo page, or pick the heart page for a cute message grid and custom text preview.</p>
+          <p>Tap the glowing arrow to open the promo page, or pick the heart page for the person who made this all possible!</p>
         </div>
         <button class="arrow-box" id="promo-open-btn"><span>→</span></button>
       </div>
       <div class="section music-panel">
         <div class="music-info">
-          <div class="page-title"><span>Sound</span> Girly playlist + visualizer</div>
+          <div class="page-title"><span>Sound</span> Playlist + Visualizer</div>
           <label for="track-select">Choose a track</label>
           <select id="track-select" class="track-select">
             <option value="Foo Fighters - Everlong (Lyrics).mp3">Foo Fighters - Everlong</option>
@@ -744,7 +809,7 @@
             <button class="control-button" id="play-pause-btn">Play</button>
             <div class="volume-wrap">
               <label for="volume-slider">Volume</label>
-              <input id="volume-slider" class="volume-slider" type="range" min="0" max="1" step="0.01" value="0.28" />
+              <input id="volume-slider" class="volume-slider" type="range" min="0" max="1" step="0.01" value="0.18" />
             </div>
           </div>
         </div>
@@ -764,14 +829,14 @@
     <div class="card">
       <div class="section">
         <div class="page-title"><span>Promo</span> Cute campaign page</div>
-        <h2 style="margin:16px 0 12px; font-size:2.1rem;">New pink neon promo world</h2>
-        <p style="color: var(--muted); line-height:1.85; max-width:760px;">This promo page is designed to feel special and obvious. The button below will show how easy it is to give users a glowing, animated route to your content.</p>
+        <h2 style="margin:16px 0 12px; font-size:2.1rem;">Nyxia - Stay ahead</h2>
+        <p style="color: var(--muted); line-height:1.85; max-width:760px;">Join the ELITE gamers and stay ahead of the curve with Nyxia's latest products! Stay unlocked + protected with Nyxia's!</p>
       </div>
       <div class="section spotlight">
         <div class="spotlight-card">
           <h2>Promo power</h2>
-          <p>Instead of hidden cards, this section brings a bright banner, animated highlights, and better text separation. The page is fully mobile friendly and keeps the same neon style from the main profile.</p>
-          <p style="margin-top:16px; color: #ffcdfc;"><strong>Suggestion:</strong> Add product cards, special launch links, or a limited-time message here.</p>
+          <p>Nyxia's latest products are designed to give you the edge you need to stay ahead of the competition!</p>
+          <p style="margin-top:16px; color: #ffcdfc;"><strong>Suggestion:</strong> Nyxia HWID spoofer + Nyxia Unlocker! *More in the future* </p>
         </div>
         <div class="arrow-box">
           <span>➤</span>
@@ -780,8 +845,8 @@
       <div class="section">
         <div class="page-title"><span>Links</span> Quick access</div>
         <div style="display:grid; gap:14px; margin-top:18px;">
-          <a href="https://nyxia.cc/" target="_blank" style="display:block; padding:18px 22px; border-radius:22px; background: rgba(255,255,255,0.04); border:1px solid rgba(255, 72, 255, 0.18); text-decoration:none; color:#fff; box-shadow: inset 0 0 20px rgba(255, 84, 255, 0.06);">Visit Nyxia Website</a>
-          <a href="https://discord.gg/nyxia" target="_blank" style="display:block; padding:18px 22px; border-radius:22px; background: rgba(255,255,255,0.04); border:1px solid rgba(255, 72, 255, 0.18); text-decoration:none; color:#fff; box-shadow: inset 0 0 20px rgba(255, 84, 255, 0.06);">Join Nyxia Discord</a>
+          <a href="https://nyxia.cc/" target="_blank" class="quick-link">Visit Nyxia Website</a>
+          <a href="https://discord.gg/nyxia" target="_blank" class="quick-link">Join Nyxia Discord</a>
         </div>
       </div>
     </div>
@@ -820,7 +885,7 @@
         </div>
         <div class="custom-box">
           <h3>Write your own message</h3>
-          <textarea id="custom-text">I love you DADDY, Sebastian 💖! You're amazing in everyway, you are truly special to me.</textarea>
+          <textarea id="custom-text">I love you DADDY, Sebastian 💖! You're truly very important and special to me. Thank you for everything! </textarea>
           <div class="preview-card">
             <div class="falling-hearts" id="falling-hearts"></div>
             <p id="preview-text">I love you, Sebastian 💖</p>
@@ -829,7 +894,7 @@
       </div>
     </div>
   </div>
-  <audio id="audio-player" loop>
+  <audio id="audio-player" loop preload="auto">
     <source src="Foo Fighters - Everlong (Lyrics).mp3" type="audio/mp3">
   </audio>
   <script>
@@ -850,6 +915,12 @@
     document.getElementById('custom-text-btn').addEventListener('click', () => showPage('heart'));
     document.getElementById('enter-text').addEventListener('click', () => {
       document.getElementById('enter-screen').style.display = 'none';
+      audio.volume = 0.18;
+      audioContext.resume().then(() => {
+        audio.play().then(() => {
+          playButton.textContent = 'Pause';
+        }).catch(() => {});
+      }).catch(() => {});
     });
     const typeTexts = [
       'Sweet streamer energy with neon glow.',
@@ -876,18 +947,12 @@
     typeEffect();
     function buildHeartGrid() {
       const heartGrid = document.getElementById('heart-grid');
-      const columns = 16;
-      const rows = 10;
-      heartGrid.style.gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
-      heartGrid.style.gridTemplateRows = `repeat(${rows}, minmax(0, 1fr))`;
       heartGrid.innerHTML = '';
-      for (let i = 0; i < columns * rows; i += 1) {
+      for (let i = 0; i < 160; i += 1) {
         const heart = document.createElement('div');
         heart.className = 'heart';
-        heart.style.opacity = `${0.08 + Math.random() * 0.22}`;
+        heart.style.opacity = 0.15 + Math.random() * 0.18;
         heart.style.animationDelay = `${Math.random() * 3}s`;
-        heart.style.gridColumn = `${(i % columns) + 1}`;
-        heart.style.gridRow = `${Math.floor(i / columns) + 1}`;
         heart.innerHTML = `<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 21s-7.5-4.35-7.5-10.5S6.5 3 12 7.5 19.5 3 19.5 10.5 12 21 12 21Z" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" fill="none"/></svg>`;
         heartGrid.appendChild(heart);
       }
@@ -947,6 +1012,7 @@
     initHearts();
     animateHearts();
     const audio = document.getElementById('audio-player');
+    audio.volume = 0.18;
     const playButton = document.getElementById('play-pause-btn');
     const volumeSlider = document.getElementById('volume-slider');
     const trackSelect = document.getElementById('track-select');
