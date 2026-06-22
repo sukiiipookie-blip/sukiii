@@ -65,9 +65,9 @@ body {
 .hub-nav {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   flex-wrap: wrap;
-  gap: 10px 16px;
+  gap: 6px;
   padding: 14px 24px;
   border-bottom: 1px solid rgba(181, 123, 255, 0.15);
   background: rgba(8, 6, 15, 0.6);
@@ -76,7 +76,8 @@ body {
 }
 
 .nav-brand {
-  padding: 6px 4px;
+  margin-right: auto;
+  padding: 8px 4px;
   border: none;
   background: transparent;
   cursor: pointer;
@@ -96,50 +97,20 @@ body {
   filter: drop-shadow(0 0 10px rgba(181, 123, 255, 0.45));
 }
 
-.hub-nav-menu {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  margin-left: auto;
-  padding: 2px 4px 2px 2px;
-  border-radius: var(--radius-pill);
-  background: rgba(10, 6, 20, 0.82);
-  border: 1px solid rgba(181, 123, 255, 0.22);
-}
-
 .hub-nav-links {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
 }
 
-.nav-sep {
+.nav-divider {
   width: 1px;
-  height: 14px;
-  background: rgba(181, 123, 255, 0.28);
+  height: 24px;
+  background: rgba(181, 123, 255, 0.25);
   flex-shrink: 0;
-}
-
-.nav-sep-major {
-  height: 16px;
-  margin: 0 4px;
-  background: rgba(181, 123, 255, 0.42);
-}
-
-.hub-nav-menu .nav-btn {
-  padding: 5px 11px;
-  border-radius: var(--radius-pill);
-  font-size: 0.78rem;
-}
-
-.nav-btn.nav-btn-syaz {
-  color: #ff9ecf;
-}
-
-.nav-btn.nav-btn-syaz.active {
-  background: rgba(255, 107, 203, 0.16);
-  border-color: rgba(255, 107, 203, 0.35);
-  box-shadow: 0 0 14px rgba(255, 107, 203, 0.25);
+  margin: 0 2px;
 }
 
 body.fx-nav-glow .hub-nav {
@@ -147,30 +118,21 @@ body.fx-nav-glow .hub-nav {
   animation: neon-nav-bar 3.5s ease-in-out infinite;
 }
 
-body.fx-nav-glow .hub-nav-menu {
-  animation: neon-nav-menu 3s ease-in-out infinite;
-}
-
 @keyframes neon-nav-bar {
   0%, 100% { box-shadow: 0 1px 0 rgba(181, 123, 255, 0.15), 0 4px 20px rgba(181, 123, 255, 0.08); }
   50% { box-shadow: 0 1px 0 rgba(224, 102, 255, 0.35), 0 6px 28px rgba(181, 123, 255, 0.18); }
 }
 
-@keyframes neon-nav-menu {
-  0%, 100% { border-color: rgba(181, 123, 255, 0.22); box-shadow: 0 0 12px rgba(181, 123, 255, 0.1); }
-  50% { border-color: rgba(224, 102, 255, 0.45); box-shadow: 0 0 22px rgba(181, 123, 255, 0.22), inset 0 0 14px rgba(224, 102, 255, 0.06); }
-}
-
 .nav-btn {
-  padding: 5px 11px;
+  padding: 8px 18px;
   border-radius: var(--radius-pill);
-  font-size: 0.78rem;
+  font-size: 0.875rem;
   font-weight: 500;
   color: var(--muted);
   background: transparent;
   border: 1px solid transparent;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: color 0.2s, background 0.2s, border-color 0.2s;
   font-family: var(--font);
 }
 
@@ -183,16 +145,47 @@ body.fx-nav-glow .hub-nav-menu {
   box-shadow: 0 0 16px var(--accent-glow);
 }
 
+.nav-btn.pulse-neon {
+  animation: promo-pulse 2s ease infinite;
+  color: var(--accent-2);
+  border-color: rgba(224, 102, 255, 0.35);
+}
+
+.nav-btn.pulse-syaz {
+  animation: syaz-nav-pulse 1.8s ease-in-out infinite;
+  color: #ff9ecf;
+  border-color: rgba(255, 107, 203, 0.45);
+  background: rgba(255, 107, 203, 0.08);
+}
+
+@keyframes syaz-nav-pulse {
+  0%, 100% { box-shadow: 0 0 6px rgba(255, 107, 203, 0.25); transform: scale(1); }
+  15% { box-shadow: 0 0 20px rgba(255, 107, 203, 0.7); transform: scale(1.05); }
+  30% { box-shadow: 0 0 8px rgba(255, 107, 203, 0.3); transform: scale(1); }
+  45% { box-shadow: 0 0 22px rgba(255, 150, 220, 0.75); transform: scale(1.06); }
+  60% { box-shadow: 0 0 6px rgba(255, 107, 203, 0.2); transform: scale(1); }
+}
+
+@keyframes promo-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(224, 102, 255, 0.3); transform: scale(1); }
+  50% { box-shadow: 0 0 24px rgba(224, 102, 255, 0.65), 0 0 40px rgba(181, 123, 255, 0.3); transform: scale(1.04); }
+}
+
 .nav-btn.admin-btn { color: var(--accent); font-weight: 600; }
 
 @media (prefers-reduced-motion: reduce) {
-  .enter-cursor { animation: none; opacity: 1; }
   body.fx-profile-glow .profile-card,
   body.fx-nav-glow .hub-nav,
-  body.fx-nav-glow .hub-nav-menu,
   body.fx-panel-glow .promo-card,
   body.fx-panel-glow .content-card,
-  body.fx-panel-glow .comments-panel {
+  body.fx-panel-glow .comments-panel,
+  .nav-btn.pulse-neon,
+  .nav-btn.pulse-syaz,
+  .syaz-nav-chip,
+  .syaz-chip-heart,
+  .badge-syaz,
+  .promo-cta-link,
+  .syaz-page {
     animation: none !important;
   }
 }
@@ -412,9 +405,15 @@ body.fx-panel-glow .comments-panel {
   padding: 5px 12px 5px 5px;
   border-radius: var(--radius-pill);
   border: 1px solid rgba(255, 107, 203, 0.45);
-  background: linear-gradient(135deg, rgba(255, 107, 203, 0.18), rgba(224, 102, 255, 0.12));
+  background: linear-gradient(135deg, rgba(255, 107, 203, 0.22), rgba(224, 102, 255, 0.14));
   cursor: pointer;
+  animation: syaz-chip-pulse 2.2s ease-in-out infinite;
   font-family: var(--font);
+}
+
+@keyframes syaz-chip-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(255, 107, 203, 0.3); }
+  50% { box-shadow: 0 0 18px rgba(255, 107, 203, 0.65), 0 0 28px rgba(224, 102, 255, 0.25); }
 }
 
 .syaz-chip-av {
@@ -425,7 +424,17 @@ body.fx-panel-glow .comments-panel {
   border: 1px solid rgba(255, 107, 203, 0.5);
 }
 
-.syaz-chip-heart { font-size: 0.85rem; color: #ff6bcb; padding-left: 4px; }
+.syaz-chip-heart {
+  font-size: 0.85rem;
+  color: #ff6bcb;
+  padding-left: 4px;
+  animation: syaz-heart-beat 1.3s ease-in-out infinite;
+}
+
+@keyframes syaz-heart-beat {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px rgba(255, 107, 203, 0.5)); }
+  50% { transform: scale(1.2); filter: drop-shadow(0 0 10px rgba(255, 107, 203, 0.95)); }
+}
 
 .syaz-chip-name {
   font-size: 0.75rem;
@@ -625,6 +634,12 @@ body.fx-panel-glow .comments-panel {
   cursor: pointer;
   text-align: center;
   transition: color 0.2s, text-shadow 0.2s;
+  animation: promo-cta-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes promo-cta-pulse {
+  0%, 100% { text-shadow: 0 0 6px rgba(224, 102, 255, 0.25); opacity: 0.92; }
+  50% { text-shadow: 0 0 16px rgba(224, 102, 255, 0.75), 0 0 28px rgba(181, 123, 255, 0.35); opacity: 1; }
 }
 
 .promo-cta-link:hover {
@@ -701,11 +716,18 @@ body.fx-panel-glow .comments-panel {
 
 /* ── Syaz tribute (owner toggle) ── */
 .badge-syaz {
-  background: transparent !important;
-  box-shadow: none !important;
-  filter: drop-shadow(0 0 6px rgba(255, 107, 203, 0.45));
+  background: linear-gradient(135deg, #ff6bcb, #e066ff) !important;
+  animation: syaz-badge-pulse 1.4s ease infinite;
+  overflow: hidden;
+  border-radius: 5px;
+  filter: none;
   font-size: 0.95rem;
-  color: #ff6bcb;
+  color: #fff;
+}
+
+@keyframes syaz-badge-pulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(255, 107, 203, 0.6); transform: scale(1); }
+  50% { box-shadow: 0 0 22px rgba(255, 107, 203, 0.9); transform: scale(1.12); }
 }
 
 .badge-syaz .badge-pfp,
@@ -724,6 +746,12 @@ body.fx-panel-glow .comments-panel {
   border-radius: var(--radius);
   overflow: hidden;
   border: 1px solid rgba(255, 107, 203, 0.35);
+  animation: syaz-page-glow 2.8s ease-in-out infinite;
+}
+
+@keyframes syaz-page-glow {
+  0%, 100% { box-shadow: 0 0 16px rgba(255, 107, 203, 0.2); border-color: rgba(255, 107, 203, 0.35); }
+  50% { box-shadow: 0 0 32px rgba(255, 107, 203, 0.45), 0 0 48px rgba(224, 102, 255, 0.2); border-color: rgba(255, 150, 220, 0.55); }
 }
 
 .syaz-page-bg {
@@ -1088,11 +1116,10 @@ body.fx-panel-glow .comments-panel {
   .profile-top { flex-direction: column; align-items: center; text-align: center; }
   .profile-name-row { justify-content: center; }
   .profile-socials { justify-content: center; }
-  .hub-nav { gap: 8px; padding: 12px 14px; }
-  .hub-nav-menu { margin-left: 0; width: 100%; justify-content: flex-end; flex-wrap: wrap; }
-  .hub-nav-links { flex-wrap: wrap; }
+  .hub-nav { gap: 4px; padding: 12px 14px; }
+  .hub-nav-links { justify-content: flex-end; }
   .nav-brand { font-size: 0.88rem; }
-  .nav-btn { padding: 4px 9px; font-size: 0.74rem; }
+  .nav-btn { padding: 6px 12px; font-size: 0.8rem; }
   .roles-pill-bar { gap: 4px; padding: 3px 8px; }
   .music-bar { min-width: calc(100vw - 24px); padding: 8px 12px; }
   .music-vol input[type="range"] { width: 60px; }

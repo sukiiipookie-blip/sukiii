@@ -151,17 +151,12 @@ function renderNav(cfg) {
 
   nav.innerHTML = `
     <button type="button" class="nav-brand" data-page="home">${brand}</button>
-    <div class="hub-nav-menu" aria-label="Main navigation">
-      <div class="hub-nav-links">
-        <button type="button" class="nav-btn ${page === 'home' ? 'active' : ''}" data-page="home">Home</button>
-        <span class="nav-sep" aria-hidden="true"></span>
-        <button type="button" class="nav-btn ${page === 'promotions' ? 'active' : ''}" data-page="promotions">Promotions</button>
-        ${syazOn ? `<span class="nav-sep" aria-hidden="true"></span>
-        <button type="button" class="nav-btn nav-btn-syaz ${page === 'syaz' ? 'active' : ''}" data-page="syaz">♥ ${syazLabel}</button>` : ''}
-        <span class="nav-sep" aria-hidden="true"></span>
-        <button type="button" class="nav-btn ${page === 'comments' ? 'active' : ''}" data-page="comments">Comments</button>
-      </div>
-      <span class="nav-sep nav-sep-major" aria-hidden="true"></span>
+    <div class="hub-nav-links">
+      <button type="button" class="nav-btn ${page === 'home' ? 'active' : ''}" data-page="home">Home</button>
+      <button type="button" class="nav-btn pulse-neon ${page === 'promotions' ? 'active' : ''}" data-page="promotions">Promotions</button>
+      ${syazOn ? `<button type="button" class="nav-btn pulse-syaz ${page === 'syaz' ? 'active' : ''}" data-page="syaz">♥ ${syazLabel}</button>` : ''}
+      <button type="button" class="nav-btn ${page === 'comments' ? 'active' : ''}" data-page="comments">Comments</button>
+      <span class="nav-divider" aria-hidden="true"></span>
       <button type="button" class="nav-btn admin-btn" id="nav-admin">${isAdmin ? 'Panel' : 'Admin'}</button>
     </div>
   `;
