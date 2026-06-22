@@ -23,28 +23,12 @@ let commentsCache = [];
 let commentsSubscribed = false;
 let syazHeartCleanup = null;
 
-const SESSION_ENTER_KEY = 'suki:entered';
-const DEFAULT_ENTER_TEXT = 'Click to see whats waiting for you 💋';
-
-function persistEnterState() {
-  try { sessionStorage.setItem(SESSION_ENTER_KEY, '1'); } catch (_) { /* private mode */ }
-}
-
-function restoreEnterState() {
-  try {
-    if (sessionStorage.getItem(SESSION_ENTER_KEY) !== '1') return false;
-  } catch (_) {
-    return false;
-  }
-  window.__sukiEntered = true;
-  $('#enter-gate')?.classList.add('dismissed');
-  $('#app')?.classList.add('ready');
-  $('#app')?.classList.remove('app-hidden');
-  return true;
-}
-
 /* ── Bootstrap ── */
 async function init() {
+  config = normalizeSiteConfig(getConfig());
+  applyTheme(config);
+  renderAll(config);
+
   try {
     await initSupabase();
     await initAuth();
@@ -54,23 +38,13 @@ async function init() {
     replaceConfig(config);
 
     applyTheme(config);
-
-    const skipGate = restoreEnterState();
-    setupEnterGate(config);
-
-    if (skipGate || $('#enter-gate')?.classList.contains('dismissed') || window.__sukiEntered) {
-      renderAll(config);
-      if (skipGate || window.__sukiEntered) initMusic(config);
-    }
+    renderAll(config);
+    initMusic(config);
 
     subscribe((c) => {
       config = normalizeSiteConfig(c);
       applyTheme(config);
-      if ($('#enter-gate')?.classList.contains('dismissed') || window.__sukiEntered) {
-        renderAll(config);
-      } else {
-        setupEnterGate(config);
-      }
+      renderAll(config);
     });
 
     setAdminReadyCallback(() => {
@@ -89,127 +63,9 @@ async function init() {
     console.error('Init failed:', err);
     config = createDefaultConfig();
     applyTheme(config);
-    const skipGate = restoreEnterState();
-    setupEnterGate(config);
-    if (skipGate || $('#enter-gate')?.classList.contains('dismissed') || window.__sukiEntered) {
-      renderAll(config);
-      if (skipGate || window.__sukiEntered) initMusic(config);
-    }
+    renderAll(config);
+    initMusic(config);
   }
-}
-
-/* ── Enter gate — wire immediately so clicks always work ── */
-let enterGateWired = false;
-let enterTypewriterTimer = null;
-let enterCopyDone = '';
-let enterCopyRunning = false;
-
-function dismissEnterGate() {
-  const gate = $('#enter-gate');
-  if (!gate || gate.classList.contains('dismissed')) return;
-  gate.classList.add('dismissed');
-  window.__sukiEntered = true;
-  persistEnterState();
-  $('#app')?.classList.add('ready');
-  $('#app')?.classList.remove('app-hidden');
-  const cfg = config || createDefaultConfig();
-  if (!config) config = cfg;
-  renderAll(cfg);
-  initMusic(cfg);
-}
-
-function wireEnterGate() {
-  const gate = $('#enter-gate');
-  if (!gate || gate.dataset.wired === '1') return;
-  gate.dataset.wired = '1';
-  enterGateWired = true;
-
-  gate.setAttribute('role', 'button');
-  gate.setAttribute('tabindex', '0');
-  gate.setAttribute('aria-label', 'Enter site');
-
-  gate.addEventListener('click', dismissEnterGate);
-  gate.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      dismissEnterGate();
-    }
-  });
-
-  if (!gate.classList.contains('dismissed') && !window.__sukiEntered) {
-    const typed = $('#enter-typed');
-    const text = config?.site?.enterText || DEFAULT_ENTER_TEXT;
-    if (text !== DEFAULT_ENTER_TEXT && typed && typed.textContent.trim() !== text) {
-      updateEnterGateCopy(config || createDefaultConfig());
-    }
-  }
-}
-
-function updateEnterGateCopy(cfg) {
-  const wrap = $('#enter-text');
-  const typedEl = $('#enter-typed');
-  const gate = $('#enter-gate');
-  if (!wrap || gate?.classList.contains('dismissed')) return;
-
-  const text = cfg.site?.enterText || DEFAULT_ENTER_TEXT;
-  const current = typedEl ? typedEl.textContent.trim() : wrap.textContent.trim();
-
-  /* Inline script handles default text typewriter — hub only takes over for custom copy */
-  if (text === DEFAULT_ENTER_TEXT) {
-    if (typedEl?.dataset.typing === '1') return;
-    if (current === text || typedEl?.dataset.done === '1') {
-      enterCopyDone = text;
-      return;
-    }
-  }
-
-  if (current === text || enterCopyDone === text) {
-    enterCopyDone = text;
-    return;
-  }
-  if (enterCopyRunning && wrap.dataset.pendingText === text) return;
-
-  startEnterTypewriter(text);
-}
-
-function startEnterTypewriter(text) {
-  const wrap = $('#enter-text');
-  const typedEl = $('#enter-typed');
-  if (!wrap) return;
-
-  if (enterTypewriterTimer) {
-    clearTimeout(enterTypewriterTimer);
-    enterTypewriterTimer = null;
-  }
-
-  enterCopyRunning = true;
-  enterCopyDone = '';
-  wrap.dataset.pendingText = text;
-  wrap.setAttribute('data-text', text);
-
-  const target = typedEl || wrap;
-  target.textContent = '';
-
-  const chars = [...text];
-  let i = 0;
-  const step = () => {
-    if ($('#enter-gate')?.classList.contains('dismissed')) {
-      enterCopyRunning = false;
-      return;
-    }
-    if (i < chars.length) {
-      target.textContent += chars[i++];
-      enterTypewriterTimer = setTimeout(step, 42 + Math.random() * 38);
-    } else {
-      enterCopyRunning = false;
-      enterCopyDone = text;
-    }
-  };
-  step();
-}
-
-function setupEnterGate(cfg) {
-  updateEnterGateCopy(cfg);
 }
 
 /* ── Theme ── */
@@ -281,7 +137,6 @@ function renderAll(cfg) {
   renderNav(cfg);
   renderMain(cfg);
   renderFooter(cfg);
-  if (!$('#enter-gate')?.classList.contains('dismissed')) return;
   renderMusicBar(cfg);
 }
 
@@ -611,7 +466,6 @@ function renderMusicBar(cfg) {
   const bar = $('#music-bar');
   if (!bar || !cfg.music?.tracks?.length) { bar?.classList.add('hidden'); return; }
   bar.classList.remove('hidden');
-  bar.classList.remove('hidden');
   const t = cfg.music.tracks[trackIdx] || cfg.music.tracks[0];
   const vol = Math.round((cfg.music.volume ?? 0.25) * 100);
   const playing = audio && !audio.paused;
@@ -739,19 +593,8 @@ let booted = false;
 function boot() {
   if (booted) return;
   booted = true;
-  window.__sukiHubReady = true;
-  wireEnterGate();
   init();
 }
 
 document.addEventListener('DOMContentLoaded', boot);
-document.addEventListener('suki:enter', () => {
-  if (!config) {
-    config = normalizeSiteConfig(getConfig());
-    if (!config?.profile?.displayName) config = createDefaultConfig();
-    applyTheme(config);
-  }
-  renderAll(config);
-  initMusic(config);
-});
 if (document.readyState !== 'loading') boot();

@@ -52,85 +52,6 @@ body {
   pointer-events: none;
 }
 
-/* ── Enter gate ── */
-#enter-gate {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  transition: opacity 0.7s, visibility 0.7s;
-}
-
-#enter-gate.dismissed {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.enter-blur {
-  position: absolute;
-  inset: 0;
-  backdrop-filter: blur(24px) saturate(1.2);
-  -webkit-backdrop-filter: blur(24px) saturate(1.2);
-  background: rgba(72, 48, 120, 0.82);
-  pointer-events: none;
-}
-
-.enter-inner {
-  position: relative;
-  z-index: 1;
-  text-align: center;
-  padding: 24px;
-  pointer-events: none;
-}
-
-.enter-main { pointer-events: none; }
-
-.enter-main {
-  font-family: var(--font-display);
-  font-size: clamp(1.75rem, 5.5vw, 2.75rem);
-  font-weight: 700;
-  min-height: 1.2em;
-  letter-spacing: 0.01em;
-  line-height: 1.25;
-  position: relative;
-  display: inline-block;
-}
-
-.enter-main,
-.enter-main .enter-typed {
-  color: #ede9fe;
-  text-shadow:
-    0 0 28px rgba(224, 102, 255, 0.65),
-    0 0 48px rgba(181, 123, 255, 0.35),
-    0 2px 16px rgba(0, 0, 0, 0.5);
-}
-
-.enter-cursor {
-  display: inline-block;
-  width: 3px;
-  height: 0.9em;
-  margin-left: 3px;
-  vertical-align: -0.08em;
-  background: linear-gradient(180deg, #ede9fe, #e066ff);
-  box-shadow: 0 0 12px rgba(224, 102, 255, 0.65);
-  animation: enter-cursor-blink 0.75s step-end infinite;
-}
-
-@keyframes enter-cursor-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-
-.enter-hint { display: none !important; }
-
-@keyframes hint-pulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 1; }
-}
-
 /* ── App shell ── */
 #app {
   position: relative;
@@ -138,13 +59,6 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-}
-
-.app-hidden { opacity: 0; pointer-events: none; }
-#app.ready { opacity: 1; transition: opacity 0.5s; pointer-events: auto; }
-
-#enter-gate:not(.dismissed) ~ #app .music-bar {
-  display: none !important;
 }
 
 /* ── Nav ── */
