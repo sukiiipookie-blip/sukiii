@@ -38,7 +38,7 @@ export const ADMIN_GROUPS = [
   { label: 'Design', sections: ['theme', 'media'] },
   { label: 'Content', sections: ['profile', 'home', 'badges', 'promotions', 'music'] },
   { label: 'Community', sections: ['comments'] },
-  { label: 'Owner', sections: ['site', 'special', 'users', 'audit'], ownerOnly: true },
+  { label: 'Owner', sections: ['site', 'bans', 'special', 'users', 'audit'], ownerOnly: true },
 ];
 
 export function isOwner(role) { return role === 'owner'; }
@@ -53,7 +53,7 @@ export function hasPermission(siteUser, permission) {
 
 export function canAccessSection(siteUser, sectionId) {
   if (!siteUser) return false;
-  if (sectionId === 'users' || sectionId === 'audit' || sectionId === 'site') return siteUser.role === 'owner';
+  if (sectionId === 'users' || sectionId === 'audit' || sectionId === 'site' || sectionId === 'bans') return siteUser.role === 'owner';
   const perm = SECTION_PERMISSION[sectionId];
   if (!perm) return true;
   return hasPermission(siteUser, perm);

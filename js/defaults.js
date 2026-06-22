@@ -216,6 +216,11 @@ export function createDefaultConfig() {
       favicon: 'assets/site-icon.svg',
       faviconPng: 'assets/site-icon-32.png',
       appleTouchIcon: 'assets/site-icon-180.png',
+      banPage: {
+        title: "Whoops! This doesn't exist",
+        subtitle: "Here's a picture of a cat instead.",
+        catImage: 'assets/banned-cat.svg',
+      },
     },
     theme: {
       preset: 'lavenderGalaxy',
@@ -350,6 +355,7 @@ export function normalizeSiteConfig(config) {
   if (!config.site.favicon) config.site.favicon = defaults.site.favicon;
   if (!config.site.faviconPng) config.site.faviconPng = defaults.site.faviconPng;
   if (!config.site.appleTouchIcon) config.site.appleTouchIcon = defaults.site.appleTouchIcon;
+  config.site.banPage = { ...defaults.site.banPage, ...config.site.banPage };
   const oldEnter = ['click here to enter', 'click to unlock yourself', 'click to stay unlocked!'];
   if (oldEnter.includes(config.site.enterText?.toLowerCase?.())) {
     config.site.enterText = defaults.site.enterText;

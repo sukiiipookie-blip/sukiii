@@ -8,7 +8,7 @@ import { THEMES, THEME_KEYS, AVATAR_FRAMES, AVATAR_FRAME_KEYS, DEFAULT_THEME_EFF
 import { uid, $, $$, showToast, escapeHtml } from './utils.js';
 import { signOut, getSiteUser } from './auth.js';
 import { getVisibleSections, ADMIN_GROUPS } from './permissions.js';
-import { renderUsersSection, bindUsersSection, renderAuditSection, bindAuditSection, renderSiteSection, bindSiteSection } from './admin-owner.js';
+import { renderUsersSection, bindUsersSection, renderAuditSection, bindAuditSection, renderSiteSection, bindSiteSection, renderBansSection, bindBansSection } from './admin-owner.js';
 import { logAudit } from './audit.js';
 
 let draft = null;
@@ -130,6 +130,11 @@ function renderSectionContent() {
     bindSiteSection(draft);
     return;
   }
+  if (section === 'bans') {
+    content.innerHTML = `<div class="cp-section-card">${renderBansSection(draft)}</div>`;
+    bindBansSection(draft);
+    return;
+  }
   if (section === 'comments') {
     content.innerHTML = `<div class="cp-section-card"><h3>💬 Comments</h3>
       <p class="admin-hint">Moderate comments directly on the Comments page. Admins with permission can delete there.</p></div>`;
@@ -176,7 +181,7 @@ function label(s) {
   return {
     theme: '🎨 Themes', media: '🖼️ Media', profile: '👤 Profile', badges: '🏅 Badges',
     home: '🏠 Home Box', about: '🏠 Home Box', promotions: '📢 Promotions', music: '🎵 Music', comments: '💬 Comments',
-    special: '💜 Syaz', site: '🌐 Tab & Icon', users: '👑 Team', audit: '📋 Audit Log',
+    special: '💜 Syaz', site: '🌐 Tab & Icon', bans: '🚫 IP Bans', users: '👑 Team', audit: '📋 Audit Log',
   }[s] || s;
 }
 

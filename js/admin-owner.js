@@ -6,8 +6,9 @@ import {
 } from './users.js';
 import { PERMISSION_LABELS, DEFAULT_ADMIN_PERMISSIONS } from './permissions.js';
 import { loadComments, deleteComment } from './comments.js';
-import { loadAuditLog } from './audit.js';
+import { loadAuditLog, logAudit } from './audit.js';
 import { uploadFile } from './state.js';
+import { listBannedIps, addBannedIp, removeBannedIp } from './bans.js';
 
 export function renderSiteSection(c) {
   const site = c.site || {};
@@ -373,6 +374,115 @@ function collectPerms(prefix) {
     perms[cb.dataset.perm] = cb.checked;
   });
   return perms;
+}
+
+export function renderBansSection(c) {
+  const bp = c.site?.banPage || {};
+  const cat = bp.catImage || 'assets/banned-cat.svg';
+  return `
+    <div class="owner-panel">
+      <div class="owner-panel-header">
+        <h3>🚫 IP Bans</h3>
+        <p class="admin-hint">Blocked visitors see a custom page at the <strong>edge</strong> (before your site loads). Takes up to ~60 seconds to apply after ban/unban. Requires Cloudflare env vars — see setup note below.</p>
+      </div>
+      <div class="admin-divider"></div>
+      <h4>Ban an IP</h4>
+      <p class="admin-hint">Find IPs in Cloudflare Analytics → Security, or from comment abuse. IPv4 example: <code>203.0.113.42</code></p>
+      <div class="form-row">
+        <div class="form-group"><label>IP address</label><input class="form-input" id="ban-ip" placeholder="203.0.113.42" autocomplete="off" /></div>
+        <div class="form-group"><label>Reason (optional)</label><input class="form-input" id="ban-reason" placeholder="Spam / harassment" /></div>
+      </div>
+      <button type="button" class="admin-btn admin-btn-danger admin-btn-sm" id="ban-add-btn" style="margin-bottom:20px">Ban this IP</button>
+      <h4>Active bans</h4>
+      <div id="ban-list" class="sortable-list"><p class="admin-hint">Loading…</p></div>
+      <div class="admin-divider"></div>
+      <h4>Block page message</h4>
+      <p class="admin-hint">Shown to banned visitors. Save Changes at the bottom to apply text + cat image.</p>
+      <div class="form-group"><label>Title</label><input class="form-input" id="ban-page-title" value="${esc(bp.title)}" /></div>
+      <div class="form-group"><label>Subtitle</label><input class="form-input" id="ban-page-sub" value="${esc(bp.subtitle)}" /></div>
+      <div class="form-group"><label>Cat image URL</label>
+        <input class="form-input" id="ban-page-cat" value="${esc(cat)}" placeholder="assets/banned-cat.svg" />
+        <input type="file" accept="image/*,.svg" id="ban-cat-upload" class="form-file" />
+        <img src="${esc(cat)}" alt="" class="admin-preview-img" style="margin-top:10px;max-width:180px" id="ban-cat-preview" />
+      </div>
+      <div class="admin-divider"></div>
+      <p class="admin-hint"><strong>Cloudflare setup (one time):</strong> Pages → your project → Settings → Environment variables → add <code>SUPABASE_URL</code> and <code>SUPABASE_SERVICE_ROLE_KEY</code> (Supabase → Project Settings → API → service_role). Redeploy after adding.</p>
+    </div>
+  `;
+}
+
+export async function bindBansSection(draft) {
+  if (!draft.site) draft.site = {};
+  if (!draft.site.banPage) draft.site.banPage = {};
+
+  const listEl = $('#ban-list');
+  const refreshList = async () => {
+    if (!listEl) return;
+    try {
+      const rows = await listBannedIps();
+      listEl.innerHTML = rows.length ? rows.map(b => `
+        <div class="sortable-item" data-ban-id="${b.id}">
+          <div>
+            <strong>${escapeHtml(b.ip_address)}</strong>
+            ${b.reason ? `<span class="admin-hint" style="display:block;margin-top:2px">${escapeHtml(b.reason)}</span>` : ''}
+            <span class="admin-hint" style="display:block;font-size:0.72rem;margin-top:2px">${new Date(b.created_at).toLocaleString()}${b.banned_by_email ? ` · ${escapeHtml(b.banned_by_email)}` : ''}</span>
+          </div>
+          <button type="button" class="admin-btn admin-btn-sm admin-btn-secondary unban-btn" data-id="${b.id}">Unban</button>
+        </div>
+      `).join('') : '<p class="admin-hint">No banned IPs yet.</p>';
+
+      $$('.unban-btn', listEl).forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm('Remove this IP ban?')) return;
+          try {
+            await removeBannedIp(btn.dataset.id);
+            await logAudit('ip_unban', { id: btn.dataset.id });
+            showToast('IP unbanned');
+            refreshList();
+          } catch (e) { showToast(e.message, 'error'); }
+        });
+      });
+    } catch (e) {
+      listEl.innerHTML = `<p class="admin-hint" style="color:#ff8fa3">Could not load bans: ${escapeHtml(e.message)}. Run section 7 in supabase/schema.sql if the table is missing.</p>`;
+    }
+  };
+
+  await refreshList();
+
+  $('#ban-add-btn')?.addEventListener('click', async () => {
+    const ip = $('#ban-ip')?.value?.trim();
+    const reason = $('#ban-reason')?.value?.trim() || '';
+    if (!ip) { showToast('Enter an IP address', 'error'); return; }
+    try {
+      await addBannedIp(ip, reason);
+      await logAudit('ip_ban', { ip, reason });
+      $('#ban-ip').value = '';
+      $('#ban-reason').value = '';
+      showToast('IP banned');
+      refreshList();
+    } catch (e) { showToast(e.message, 'error'); }
+  });
+
+  $('#ban-page-title')?.addEventListener('input', e => { draft.site.banPage.title = e.target.value; });
+  $('#ban-page-sub')?.addEventListener('input', e => { draft.site.banPage.subtitle = e.target.value; });
+  $('#ban-page-cat')?.addEventListener('input', e => {
+    draft.site.banPage.catImage = e.target.value;
+    const prev = $('#ban-cat-preview');
+    if (prev) prev.src = e.target.value;
+  });
+
+  $('#ban-cat-upload')?.addEventListener('change', async e => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    try {
+      const url = await uploadFile('assets', `ban-cat-${Date.now()}-${f.name}`, f);
+      draft.site.banPage.catImage = url;
+      $('#ban-page-cat').value = url;
+      const prev = $('#ban-cat-preview');
+      if (prev) prev.src = url;
+      showToast('Cat image uploaded — hit Save Changes');
+    } catch (err) { showToast(err.message, 'error'); }
+  });
 }
 
 function esc(s) {
