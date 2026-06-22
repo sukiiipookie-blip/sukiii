@@ -74,7 +74,7 @@ body {
   inset: 0;
   backdrop-filter: blur(24px) saturate(1.2);
   -webkit-backdrop-filter: blur(24px) saturate(1.2);
-  background: rgba(88, 60, 140, 0.45);
+  background: rgba(72, 48, 120, 0.82);
   pointer-events: none;
 }
 
@@ -101,15 +101,11 @@ body {
 
 .enter-main,
 .enter-main .enter-typed {
-  background: var(--name-grad, linear-gradient(90deg, #ede9fe, #d4a5ff, #e066ff));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-}
-
-.enter-main .enter-typed {
-  filter: drop-shadow(0 0 24px rgba(181, 123, 255, 0.5));
+  color: #ede9fe;
+  text-shadow:
+    0 0 28px rgba(224, 102, 255, 0.65),
+    0 0 48px rgba(181, 123, 255, 0.35),
+    0 2px 16px rgba(0, 0, 0, 0.5);
 }
 
 .enter-cursor {
@@ -152,8 +148,12 @@ body {
   flex-direction: column;
 }
 
-.app-hidden { opacity: 0; }
-#app.ready { opacity: 1; transition: opacity 0.5s; }
+.app-hidden { opacity: 0; pointer-events: none; }
+#app.ready { opacity: 1; transition: opacity 0.5s; pointer-events: auto; }
+
+#enter-gate:not(.dismissed) ~ #app .music-bar {
+  display: none !important;
+}
 
 /* ── Nav ── */
 .hub-nav {

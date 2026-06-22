@@ -138,8 +138,9 @@ function wireEnterGate() {
 
   if (!gate.classList.contains('dismissed') && !window.__sukiEntered) {
     const typed = $('#enter-typed');
-    if (!typed?.textContent?.trim()) {
-      startEnterTypewriter('Click to see whats waiting for you 💋');
+    const text = config?.site?.enterText || 'Click to see whats waiting for you 💋';
+    if (typed && typed.textContent.trim() !== text) {
+      updateEnterGateCopy(config || createDefaultConfig());
     }
   }
 }
@@ -151,13 +152,12 @@ function updateEnterGateCopy(cfg) {
   if (!wrap || gate?.classList.contains('dismissed')) return;
 
   const text = cfg.site?.enterText || 'Click to see whats waiting for you 💋';
-  const current = typedEl ? typedEl.textContent : wrap.textContent;
-  if (enterCopyDone === text || current === text) {
+  const current = typedEl ? typedEl.textContent.trim() : wrap.textContent.trim();
+  if (current === text || enterCopyDone === text) {
     enterCopyDone = text;
     return;
   }
   if (enterCopyRunning && wrap.dataset.pendingText === text) return;
-  if (typedEl?.dataset.typing === '1' && current.length > 0) return;
 
   startEnterTypewriter(text);
 }
@@ -602,6 +602,7 @@ function renderMusicBar(cfg) {
   const bar = $('#music-bar');
   if (!bar || !cfg.music?.tracks?.length) { bar?.classList.add('hidden'); return; }
   bar.classList.remove('hidden');
+  bar.classList.remove('hidden');
   const t = cfg.music.tracks[trackIdx] || cfg.music.tracks[0];
   const vol = Math.round((cfg.music.volume ?? 0.25) * 100);
   const playing = audio && !audio.paused;
@@ -736,7 +737,12 @@ function boot() {
 
 document.addEventListener('DOMContentLoaded', boot);
 document.addEventListener('suki:enter', () => {
-  if (!config) config = createDefaultConfig();
+  if (!config) {
+    config = normalizeSiteConfig(getConfig());
+    if (!config?.profile?.displayName) config = createDefaultConfig();
+    applyTheme(config);
+  }
   renderAll(config);
+  initMusic(config);
 });
 if (document.readyState !== 'loading') boot();

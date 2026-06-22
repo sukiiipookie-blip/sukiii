@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/hub.css?v=9">
+  <link rel="stylesheet" href="css/hub.css?v=10">
 </head>
 <body>
   <script>
@@ -36,24 +36,6 @@
         document.dispatchEvent(new CustomEvent('suki:enter'));
       }
 
-      function startInlineTypewriter() {
-        if (window.__sukiEntered) return;
-        var el = document.getElementById('enter-typed');
-        if (!el || el.dataset.typing === '1') return;
-        el.dataset.typing = '1';
-        el.textContent = '';
-        var chars = Array.from(ENTER_TEXT);
-        var i = 0;
-        function step() {
-          if (window.__sukiEntered) return;
-          if (i < chars.length) {
-            el.textContent += chars[i++];
-            setTimeout(step, 45 + Math.random() * 30);
-          }
-        }
-        step();
-      }
-
       function wire() {
         var gate = document.getElementById('enter-gate');
         var text = document.getElementById('enter-text');
@@ -62,7 +44,6 @@
           enterSite();
           return;
         }
-        startInlineTypewriter();
         if (!gate || gate.dataset.wired) return;
         gate.dataset.wired = '1';
         gate.addEventListener('click', enterSite);
@@ -78,7 +59,7 @@
     <div class="enter-blur"></div>
     <div class="enter-inner">
       <p class="enter-main enter-glitch" id="enter-text" data-text="Click to see whats waiting for you 💋">
-        <span class="enter-typed" id="enter-typed" aria-live="polite"></span><span class="enter-cursor" aria-hidden="true"></span>
+        <span class="enter-typed" id="enter-typed" aria-live="polite">Click to see whats waiting for you 💋</span><span class="enter-cursor" aria-hidden="true"></span>
       </p>
     </div>
   </div>
@@ -92,11 +73,11 @@
 
     <footer class="hub-footer" id="hub-footer"></footer>
 
-    <div class="music-bar" id="music-bar"></div>
+    <div class="music-bar hidden" id="music-bar"></div>
   </div>
 
   <div id="toast-container"></div>
 
-  <script type="module" src="js/hub.js?v=9"></script>
+  <script type="module" src="js/hub.js?v=10"></script>
 </body>
 </html>
