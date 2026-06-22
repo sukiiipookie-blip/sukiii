@@ -135,7 +135,11 @@ function loadTrack(cfg, idx, resumeTime = 0, autoPlay = false) {
 
 export function changeTrack(cfg, dir) {
   const tracks = cfg.music.tracks;
-  if (tracks.length <= 1) return;
+  if (!tracks.length) return;
+  if (tracks.length === 1) {
+    loadTrack(cfg, 0, 0, true);
+    return;
+  }
   let next;
   if (cfg.music.shuffle) {
     const pos = shuffleOrder.indexOf(trackIdx);

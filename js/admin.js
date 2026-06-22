@@ -236,6 +236,7 @@ function renderMedia(c) {
       <input class="form-input" id="avatar-url" value="${esc(c.profile.avatar)}" />
       <input type="file" accept="image/*" id="avatar-upload" class="form-file" />${avPrev}
     </div>
+    <button class="admin-btn admin-btn-secondary admin-btn-sm" id="clear-avatar">Clear profile photo</button>
     <button class="admin-btn admin-btn-secondary admin-btn-sm" id="clear-bg">Clear custom background</button>`;
 }
 
@@ -368,7 +369,11 @@ function renderSpecial(c) {
     <div class="form-group"><label>Page title (e.g. Me & Syaz)</label><input class="form-input" id="syaz-box-title" value="${esc(s.boxTitle)}" /></div>
     <div class="form-group"><label>Subtitle line</label><input class="form-input" id="syaz-box-line" value="${esc(s.boxLine)}" /></div>
     <div class="form-group"><label>Photo / meme URL</label><input class="form-input" id="syaz-box-img" value="${esc(s.boxImage)}" />${imgPrev}</div>
-    <input type="file" accept="image/*,.gif" id="syaz-img-upload" class="form-file" />`;
+    <input type="file" accept="image/*,.gif" id="syaz-img-upload" class="form-file" />
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px">
+      <button type="button" class="admin-btn admin-btn-secondary admin-btn-sm" id="clear-syaz-chip-av">Clear chip photo</button>
+      <button type="button" class="admin-btn admin-btn-secondary admin-btn-sm" id="clear-syaz-box-img">Clear page photo</button>
+    </div>`;
 }
 
 function bindSection(sec) {
@@ -400,7 +405,12 @@ function bindMedia() {
   $('#bg-url')?.addEventListener('input', e => { draft.theme.customBg = e.target.value; });
   $('#bg-size')?.addEventListener('change', e => { draft.theme.customBgSize = e.target.value; });
   $('#avatar-url')?.addEventListener('input', e => { draft.profile.avatar = e.target.value; });
-  $('#clear-bg')?.addEventListener('click', () => { draft.theme.customBg = ''; renderSection(); });
+  $('#clear-avatar')?.addEventListener('click', () => {
+    draft.profile.avatar = '';
+    renderSection();
+    showToast('Profile photo cleared — save to apply');
+  });
+  $('#clear-bg')?.addEventListener('click', () => { draft.theme.customBg = ''; renderSection(); showToast('Background cleared — save to apply'); });
   $('#bg-upload')?.addEventListener('change', async e => {
     const f = e.target.files?.[0]; if (!f) return;
     try { draft.theme.customBg = await uploadFile('backgrounds', `bg-${Date.now()}-${f.name}`, f); renderSection(); showToast('Uploaded!'); }
@@ -605,6 +615,16 @@ function bindSpecial() {
   $('#syaz-box-title')?.addEventListener('input', e => { s.boxTitle = e.target.value; });
   $('#syaz-box-line')?.addEventListener('input', e => { s.boxLine = e.target.value; });
   $('#syaz-box-img')?.addEventListener('input', e => { s.boxImage = e.target.value; });
+  $('#clear-syaz-chip-av')?.addEventListener('click', () => {
+    s.chipAvatar = '';
+    renderSection();
+    showToast('Chip photo cleared — save to apply');
+  });
+  $('#clear-syaz-box-img')?.addEventListener('click', () => {
+    s.boxImage = '';
+    renderSection();
+    showToast('Page photo cleared — save to apply');
+  });
   $('#syaz-chip-upload')?.addEventListener('change', async e => {
     const f = e.target.files?.[0]; if (!f) return;
     try { s.chipAvatar = await uploadFile('assets', `syaz-chip-${Date.now()}-${f.name}`, f); renderSection(); showToast('Uploaded!'); }
