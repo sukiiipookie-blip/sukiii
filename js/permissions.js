@@ -4,7 +4,7 @@ export const PERMISSION_LABELS = {
   moderate_comments: 'Moderate Comments',
   edit_profile: 'Profile & Name',
   edit_badges: 'Badges & Icons',
-  edit_content: 'About & Promotions',
+  edit_content: 'Home Box & Promotions',
   edit_music: 'Music Player',
   edit_media: 'Uploads & Backgrounds',
   manage_users: 'Manage Admins',
@@ -25,6 +25,7 @@ export const SECTION_PERMISSION = {
   profile: 'edit_profile',
   badges: 'edit_badges',
   about: 'edit_content',
+  home: 'edit_content',
   promotions: 'edit_content',
   music: 'edit_music',
   media: 'edit_media',
@@ -35,9 +36,9 @@ export const SECTION_PERMISSION = {
 
 export const ADMIN_GROUPS = [
   { label: 'Design', sections: ['theme', 'media'] },
-  { label: 'Content', sections: ['profile', 'badges', 'about', 'promotions', 'music'] },
+  { label: 'Content', sections: ['profile', 'home', 'badges', 'promotions', 'music'] },
   { label: 'Community', sections: ['comments'] },
-  { label: 'Owner', sections: ['special', 'users', 'audit'], ownerOnly: true },
+  { label: 'Owner', sections: ['site', 'special', 'users', 'audit'], ownerOnly: true },
 ];
 
 export function isOwner(role) { return role === 'owner'; }
@@ -52,7 +53,7 @@ export function hasPermission(siteUser, permission) {
 
 export function canAccessSection(siteUser, sectionId) {
   if (!siteUser) return false;
-  if (sectionId === 'users' || sectionId === 'audit') return siteUser.role === 'owner';
+  if (sectionId === 'users' || sectionId === 'audit' || sectionId === 'site') return siteUser.role === 'owner';
   const perm = SECTION_PERMISSION[sectionId];
   if (!perm) return true;
   return hasPermission(siteUser, perm);

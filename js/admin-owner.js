@@ -7,6 +7,77 @@ import {
 import { PERMISSION_LABELS, DEFAULT_ADMIN_PERMISSIONS } from './permissions.js';
 import { loadComments, deleteComment } from './comments.js';
 import { loadAuditLog } from './audit.js';
+import { uploadFile } from './state.js';
+
+export function renderSiteSection(c) {
+  const site = c.site || {};
+  const favicon = site.favicon || 'assets/site-icon.svg';
+  return `
+    <div class="owner-panel">
+      <div class="owner-panel-header">
+        <h3>🌐 Browser Tab</h3>
+        <p class="admin-hint">Owner only — the little icon in the browser tab + page title.</p>
+      </div>
+      <div class="admin-divider"></div>
+      <div class="form-group">
+        <label>Tab title</label>
+        <input class="form-input" id="site-title" value="${esc(site.title)}" placeholder="Suki | Creator Hub" />
+      </div>
+      <div class="form-group">
+        <label>Tab icon URL</label>
+        <input class="form-input" id="site-favicon" value="${esc(favicon)}" placeholder="assets/site-icon.svg" />
+        <input type="file" accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/svg+xml,image/webp" id="site-favicon-upload" class="form-file" />
+        <p class="admin-hint">100% yours — upload any square PNG (32×32 or 64×64) or SVG. Works in Chrome, Edge, Firefox, Safari &amp; mobile. PNG is used as fallback everywhere.</p>
+        <div class="favicon-preview-row">
+          <div class="favicon-preview-box" title="32×32 tab size">
+            <img id="site-favicon-preview-32" src="${esc(favicon)}" alt="" width="32" height="32" />
+            <span>32px</span>
+          </div>
+          <div class="favicon-preview-box" title="16×16 tab size">
+            <img id="site-favicon-preview-16" src="${esc(favicon)}" alt="" width="16" height="16" />
+            <span>16px</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+export function bindSiteSection(draft) {
+  if (!draft.site) draft.site = {};
+
+  const syncPreview = (url) => {
+    ['site-favicon-preview-32', 'site-favicon-preview-16'].forEach(id => {
+      const img = document.getElementById(id);
+      if (img) img.src = url || 'assets/site-icon.svg';
+    });
+  };
+
+  $('#site-title')?.addEventListener('input', e => { draft.site.title = e.target.value; });
+  $('#site-favicon')?.addEventListener('input', e => {
+    draft.site.favicon = e.target.value;
+    syncPreview(e.target.value);
+  });
+
+  $('#site-favicon-upload')?.addEventListener('change', async e => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    try {
+      const url = await uploadFile('assets', `favicon-${Date.now()}-${f.name}`, f);
+      draft.site.favicon = url;
+      if (/\.(png|jpe?g|webp|ico)$/i.test(f.name)) {
+        draft.site.faviconPng = url;
+        draft.site.appleTouchIcon = url;
+      }
+      const input = $('#site-favicon');
+      if (input) input.value = url;
+      syncPreview(url);
+      showToast('Tab icon uploaded — save to apply everywhere!');
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  });
+}
 
 export function renderUsersSection() {
   return `

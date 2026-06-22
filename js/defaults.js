@@ -200,18 +200,31 @@ export const AVATAR_FRAMES = {
 
 export const AVATAR_FRAME_KEYS = Object.keys(AVATAR_FRAMES);
 
+export const DEFAULT_THEME_EFFECTS = {
+  profileGlow: true,
+  navGlow: true,
+  panelGlow: true,
+};
+
 export function createDefaultConfig() {
   return {
     site: {
       title: 'Suki | Creator Hub',
-      enterText: 'click to unlock yourself',
-      enterHint: 'tap anywhere · you\'re clear to enter',
+      enterText: 'Click to see whats waiting for you 💋',
+      enterHint: '',
       footerCredit: 'Suki',
+      favicon: 'assets/site-icon.svg',
+      faviconPng: 'assets/site-icon-32.png',
+      appleTouchIcon: 'assets/site-icon-180.png',
     },
     theme: {
       preset: 'lavenderGalaxy',
       customBg: '',
-      nameGradient: '',
+      effects: {
+        profileGlow: true,
+        navGlow: true,
+        panelGlow: true,
+      },
     },
     profile: {
       displayName: 'NekiraBelle',
@@ -238,7 +251,30 @@ export function createDefaultConfig() {
     ],
     about: {
       title: 'About',
-      body: '<p>Hey — I\'m Suki! I stream, create content, and rep <strong>Nyxia</strong>. Mostly DBD and RE, cozy neon vibes, and hanging with my community.</p><p>Check <a href="#" class="tab-link" data-page="promotions">Promotions</a> for Nyxia links or leave a message in <a href="#" class="tab-link" data-page="comments">Comments</a>!</p>',
+      body: '<p>Hey — I\'m Suki! I stream, create content, and rep <strong>Nyxia</strong>. Mostly DBD and RE, cozy neon vibes, and hanging with my community.</p>',
+    },
+    home: {
+      aboutBody: '<p>Hey — I\'m Suki! I stream, create content, and rep <strong>Nyxia</strong>. Mostly DBD and RE, cozy neon vibes, and hanging with my community.</p>',
+      quickLinksTitle: 'Quick Links',
+      quickLinks: [
+        {
+          id: uid(),
+          title: 'Nyxia.cc',
+          subtitle: 'HWID spoofers, unlockers & premium tools',
+          url: 'https://nyxia.cc/',
+          accent: '#b57bff',
+          visible: true,
+        },
+        {
+          id: uid(),
+          title: 'Nyxia Discord',
+          subtitle: 'Join the community · support & updates',
+          url: 'https://discord.gg/nyxia',
+          accent: '#5865F2',
+          visible: true,
+        },
+      ],
+      promoCtaText: 'Want more info? Check out Promotions',
     },
     promotions: [
       {
@@ -311,11 +347,31 @@ export function normalizeSiteConfig(config) {
   if (!config.site) config.site = defaults.site;
   else config.site = { ...defaults.site, ...config.site };
   if (!config.site.enterHint) config.site.enterHint = defaults.site.enterHint;
+  if (!config.site.favicon) config.site.favicon = defaults.site.favicon;
+  if (!config.site.faviconPng) config.site.faviconPng = defaults.site.faviconPng;
+  if (!config.site.appleTouchIcon) config.site.appleTouchIcon = defaults.site.appleTouchIcon;
+  const oldEnter = ['click here to enter', 'click to unlock yourself', 'click to stay unlocked!'];
+  if (oldEnter.includes(config.site.enterText?.toLowerCase?.())) {
+    config.site.enterText = defaults.site.enterText;
+  }
   if (!config.theme) config.theme = defaults.theme;
+  else config.theme = { ...defaults.theme, ...config.theme };
+  config.theme.effects = { ...DEFAULT_THEME_EFFECTS, ...defaults.theme.effects, ...config.theme.effects };
   if (!config.profile) config.profile = defaults.profile;
   if (!config.badges?.length) config.badges = defaults.badges;
   if (!config.socials?.length) config.socials = defaults.socials;
   if (!config.about) config.about = defaults.about;
+  if (!config.home) {
+    config.home = { ...defaults.home };
+    if (config.about?.body) config.home.aboutBody = config.about.body;
+  } else {
+    config.home = { ...defaults.home, ...config.home };
+    if (!config.home.aboutBody && config.about?.body) config.home.aboutBody = config.about.body;
+  }
+  config.home.quickLinks = (config.home.quickLinks?.length ? config.home.quickLinks : defaults.home.quickLinks).map((l, i) => ({
+    ...defaults.home.quickLinks[i % defaults.home.quickLinks.length],
+    ...l,
+  }));
   if (!config.promotions?.length) config.promotions = defaults.promotions;
   if (!config.music) config.music = defaults.music;
   if (!config.comments) config.comments = defaults.comments;
@@ -338,16 +394,16 @@ export function normalizeSiteConfig(config) {
       id: s.id || uid(), platform: s.platform || 'link', url: s.url, visible: s.visible !== false,
     }));
   }
-  if (config.profile?.bio && (!config.about?.body || config.about.body === defaults.about.body)) {
-    config.about.body = `<p>${config.profile.bio}</p>`;
+  if (config.profile?.bio && (!config.home?.aboutBody || config.home.aboutBody === defaults.home.aboutBody)) {
+    config.home.aboutBody = `<p>${config.profile.bio}</p>`;
   }
   if (config.profile?.tagline && !config.profile.infoLines?.length) {
     config.profile.infoLines = [config.profile.tagline, ...(config.profile.infoLines || [])];
   }
   if (config.tabs) {
     const aboutTab = config.tabs.find(t => t.type === 'about');
-    if (aboutTab?.content?.body && config.about.body === defaults.about.body) {
-      config.about.body = aboutTab.content.body;
+    if (aboutTab?.content?.body && (!config.home.aboutBody || config.home.aboutBody === defaults.home.aboutBody)) {
+      config.home.aboutBody = aboutTab.content.body;
     }
   }
 

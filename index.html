@@ -4,19 +4,56 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Suki | Creator Hub</title>
+  <link rel="icon" href="assets/site-icon.svg" type="image/svg+xml">
+  <link rel="alternate icon" href="assets/site-icon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="assets/site-icon-180.png" sizes="180x180">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/hub.css">
-  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/hub.css?v=8">
 </head>
 <body>
-  <!-- Enter gate -->
+  <script>
+    try {
+      if (sessionStorage.getItem('suki:entered') === '1') {
+        document.documentElement.classList.add('suki-entered');
+      }
+    } catch (e) {}
+  </script>
+  <!-- Enter gate — inline handler so clicks work even if hub.js is slow/fails -->
+  <script>
+    (function () {
+      function enterSite() {
+        var gate = document.getElementById('enter-gate');
+        if (!gate || gate.classList.contains('dismissed')) return;
+        gate.classList.add('dismissed');
+        var app = document.getElementById('app');
+        if (app) { app.classList.add('ready'); app.classList.remove('app-hidden'); }
+        window.__sukiEntered = true;
+        try { sessionStorage.setItem('suki:entered', '1'); } catch (e) {}
+        document.dispatchEvent(new CustomEvent('suki:enter'));
+      }
+      function wire() {
+        var gate = document.getElementById('enter-gate');
+        var text = document.getElementById('enter-text');
+        if (text) text.setAttribute('data-text', 'Click to see whats waiting for you 💋');
+        if (!gate || gate.dataset.wired) return;
+        gate.dataset.wired = '1';
+        gate.addEventListener('click', enterSite);
+        gate.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); enterSite(); }
+        });
+      }
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
+      else wire();
+    })();
+  </script>
   <div id="enter-gate">
     <div class="enter-blur"></div>
     <div class="enter-inner">
-      <p class="enter-main" id="enter-text"></p>
-      <p class="enter-hint" id="enter-hint"></p>
+      <p class="enter-main enter-glitch" id="enter-text" data-text="Click to see whats waiting for you 💋">
+        <span class="enter-typed" id="enter-typed" aria-live="polite"></span><span class="enter-cursor" aria-hidden="true"></span>
+      </p>
     </div>
   </div>
 
@@ -34,6 +71,6 @@
 
   <div id="toast-container"></div>
 
-  <script type="module" src="js/hub.js"></script>
+  <script type="module" src="js/hub.js?v=8"></script>
 </body>
 </html>

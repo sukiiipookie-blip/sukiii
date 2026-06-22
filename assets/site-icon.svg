@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Suki">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3d2463"/>
+      <stop offset="1" stop-color="#1a1028"/>
+    </linearGradient>
+    <linearGradient id="heart" x1="14" y1="16" x2="50" y2="50" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f9a8d4"/>
+      <stop offset="1" stop-color="#e066ff"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <rect x="2" y="2" width="60" height="60" rx="12" fill="none" stroke="#b57bff" stroke-opacity="0.45" stroke-width="1.5"/>
+  <path filter="url(#glow)" fill="url(#heart)" d="M32 47s-16-11-16-21c0-5 4-9 10-9 3 0 6 2 8 5 2-3 5-5 8-5 6 0 10 4 10 9 0 10-16 21-16 21z"/>
+  <circle cx="47" cy="17" r="2.5" fill="#d4a5ff"/>
+  <circle cx="42" cy="13" r="1.2" fill="#ede9fe" opacity="0.85"/>
+</svg>

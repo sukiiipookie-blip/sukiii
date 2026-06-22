@@ -4,22 +4,24 @@
 import {
   getConfig, replaceConfig, saveConfigToSupabase, revertToLastSaved, uploadFile, subscribe,
 } from './state.js';
-import { THEMES, THEME_KEYS, AVATAR_FRAMES, AVATAR_FRAME_KEYS } from './defaults.js';
+import { THEMES, THEME_KEYS, AVATAR_FRAMES, AVATAR_FRAME_KEYS, DEFAULT_THEME_EFFECTS } from './defaults.js';
 import { uid, $, $$, showToast, escapeHtml } from './utils.js';
 import { signOut, getSiteUser } from './auth.js';
 import { getVisibleSections, ADMIN_GROUPS } from './permissions.js';
-import { renderUsersSection, bindUsersSection, renderAuditSection, bindAuditSection } from './admin-owner.js';
+import { renderUsersSection, bindUsersSection, renderAuditSection, bindAuditSection, renderSiteSection, bindSiteSection } from './admin-owner.js';
 import { logAudit } from './audit.js';
 
 let draft = null;
 let section = 'theme';
 let pageMode = false;
+let adminNavReady = false;
 
 export function initAdminPage() {
   pageMode = true;
   draft = JSON.parse(JSON.stringify(getConfig()));
   bindGlobalActions();
-  renderSection();
+  renderAdminNav(true);
+  renderSection(false);
 }
 
 export function openAdminUI() {
@@ -29,10 +31,12 @@ export function openAdminUI() {
   }
   if (!$('#admin-panel')) buildLegacyPanel();
   draft = JSON.parse(JSON.stringify(getConfig()));
-  renderSection();
+  renderAdminNav(true);
+  renderSection(false);
 }
 
 function bindGlobalActions() {
+  if ($('#admin-save')?.dataset.bound) return;
   $('#admin-save')?.addEventListener('click', save);
   $('#admin-revert')?.addEventListener('click', () => {
     draft = JSON.parse(JSON.stringify(revertToLastSaved()));
@@ -40,6 +44,7 @@ function bindGlobalActions() {
     showToast('Reverted to last saved');
   });
   $('#admin-signout')?.addEventListener('click', () => signOut());
+  $('#admin-save')?.setAttribute('data-bound', '1');
 }
 
 function buildLegacyPanel() {
@@ -55,36 +60,58 @@ function buildLegacyPanel() {
   bindGlobalActions();
 }
 
-function renderSection() {
+function renderAdminNav(forceRebuild = false) {
   const user = getSiteUser();
   const visible = getVisibleSections(user);
-  if (!visible.includes(section)) section = visible[0] || 'theme';
+  const nav = $('#admin-nav');
+  if (!nav) return;
 
+  if (!adminNavReady) {
+    nav.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-sec]');
+      if (!btn) return;
+      const next = btn.dataset.sec;
+      if (next === section) return;
+      section = next;
+      nav.querySelectorAll('[data-sec]').forEach(b => {
+        b.classList.toggle('active', b.dataset.sec === section);
+      });
+      renderSection(false);
+    });
+    adminNavReady = true;
+  }
+
+  if (!forceRebuild && nav.dataset.ready === '1') {
+    nav.querySelectorAll('[data-sec]').forEach(b => {
+      b.classList.toggle('active', b.dataset.sec === section);
+    });
+    return;
+  }
+
+  nav.innerHTML = ADMIN_GROUPS.map(g => {
+    const items = g.sections.filter(s => visible.includes(s));
+    if (!items.length) return '';
+    return `<div class="cp-nav-group">
+      <div class="cp-nav-label">${g.label}</div>
+      ${items.map(s => `<button type="button" class="cp-nav-btn ${s === section ? 'active' : ''}" data-sec="${s}">${label(s)}</button>`).join('')}
+    </div>`;
+  }).join('');
+  nav.dataset.ready = '1';
+}
+
+function updateAdminChrome() {
+  const user = getSiteUser();
   const roleEl = $('#admin-role-label');
   if (roleEl) {
     roleEl.textContent = user?.role === 'owner'
       ? '👑 Owner — full customization access'
       : '🛡️ Admin — limited permissions';
   }
-
   const titleEl = $('#cp-section-title');
   if (titleEl) titleEl.textContent = label(section);
+}
 
-  const nav = $('#admin-nav');
-  if (nav) {
-    nav.innerHTML = ADMIN_GROUPS.map(g => {
-      const items = g.sections.filter(s => visible.includes(s));
-      if (!items.length) return '';
-      return `<div class="cp-nav-group">
-        <div class="cp-nav-label">${g.label}</div>
-        ${items.map(s => `<button class="cp-nav-btn ${s === section ? 'active' : ''}" data-sec="${s}">${label(s)}</button>`).join('')}
-      </div>`;
-    }).join('');
-    nav.querySelectorAll('[data-sec]').forEach(b => {
-      b.addEventListener('click', () => { section = b.dataset.sec; renderSection(); });
-    });
-  }
-
+function renderSectionContent() {
   const content = $('#admin-content');
   if (!content) return;
 
@@ -98,6 +125,11 @@ function renderSection() {
     bindAuditSection();
     return;
   }
+  if (section === 'site') {
+    content.innerHTML = `<div class="cp-section-card">${renderSiteSection(draft)}</div>`;
+    bindSiteSection(draft);
+    return;
+  }
   if (section === 'comments') {
     content.innerHTML = `<div class="cp-section-card"><h3>💬 Comments</h3>
       <p class="admin-hint">Moderate comments directly on the Comments page. Admins with permission can delete there.</p></div>`;
@@ -108,12 +140,33 @@ function renderSection() {
   bindSection(section);
 }
 
+function renderSection(rebuildNav = false) {
+  const visible = getVisibleSections(getSiteUser());
+  if (!visible.includes(section)) {
+    section = visible[0] || 'theme';
+    rebuildNav = true;
+  }
+
+  updateAdminChrome();
+  renderAdminNav(rebuildNav);
+
+  const content = $('#admin-content');
+  if (!content) return;
+
+  content.classList.add('is-swapping');
+  requestAnimationFrame(() => {
+    renderSectionContent();
+    requestAnimationFrame(() => content.classList.remove('is-swapping'));
+  });
+}
+
 const renderers = {
   theme: renderTheme,
   media: renderMedia,
   profile: renderProfile,
   badges: renderBadges,
-  about: renderAbout,
+  about: renderHome,
+  home: renderHome,
   promotions: renderPromos,
   music: renderMusic,
   special: renderSpecial,
@@ -122,12 +175,13 @@ const renderers = {
 function label(s) {
   return {
     theme: '🎨 Themes', media: '🖼️ Media', profile: '👤 Profile', badges: '🏅 Badges',
-    about: '📝 About', promotions: '📢 Promotions', music: '🎵 Music', comments: '💬 Comments',
-    special: '💜 Syaz', users: '👑 Team', audit: '📋 Audit Log',
+    home: '🏠 Home Box', about: '🏠 Home Box', promotions: '📢 Promotions', music: '🎵 Music', comments: '💬 Comments',
+    special: '💜 Syaz', site: '🌐 Tab & Icon', users: '👑 Team', audit: '📋 Audit Log',
   }[s] || s;
 }
 
 function renderTheme(c) {
+  const fx = c.theme?.effects || DEFAULT_THEME_EFFECTS;
   const presets = THEME_KEYS.map(k => {
     const t = THEMES[k];
     return `<div class="theme-preset ${c.theme.preset === k ? 'active' : ''}" data-theme="${k}">
@@ -136,7 +190,16 @@ function renderTheme(c) {
   }).join('');
   return `<h3>Neon Themes</h3>
     <p class="admin-hint">Girly neon vibes — pick a preset. Hit Save to apply site-wide.</p>
-    <div class="theme-presets theme-presets-wide">${presets}</div>`;
+    <div class="theme-presets theme-presets-wide">${presets}</div>
+    <div class="admin-divider"></div>
+    <h4>Neon outline effects</h4>
+    <p class="admin-hint">Animated glows on the profile box, nav bar, and content panels. Clean neon — no weird pulsing buttons.</p>
+    <div class="fx-toggle-grid">
+      <label class="fx-toggle"><input type="checkbox" id="fx-profile" ${fx.profileGlow !== false ? 'checked' : ''} /> Profile box glow</label>
+      <label class="fx-toggle"><input type="checkbox" id="fx-nav" ${fx.navGlow !== false ? 'checked' : ''} /> Nav bar glow</label>
+      <label class="fx-toggle"><input type="checkbox" id="fx-panel" ${fx.panelGlow !== false ? 'checked' : ''} /> Panel outlines glow</label>
+    </div>
+    <button type="button" class="admin-btn admin-btn-secondary admin-btn-sm" id="fx-revert-original" style="margin-top:12px">↩ Revert effects to original</button>`;
 }
 
 function renderMedia(c) {
@@ -176,8 +239,7 @@ function renderProfile(c) {
     <div class="form-group"><label>Info Lines</label><div class="info-lines">${lines}</div>
       <button type="button" class="admin-btn admin-btn-sm admin-btn-neon" id="add-info-line">+ Add line</button></div>
     <div class="form-row">
-      <div class="form-group"><label>Enter main text</label><input class="form-input" id="enter-text" value="${esc(c.site.enterText)}" placeholder="click to unlock yourself" /></div>
-      <div class="form-group"><label>Enter hint (italic subtext)</label><input class="form-input" id="enter-hint" value="${esc(c.site.enterHint)}" placeholder="tap anywhere · you're clear to enter" /></div>
+      <div class="form-group"><label>Enter screen text</label><input class="form-input" id="enter-text" value="${esc(c.site.enterText)}" placeholder="Click to see whats waiting for you 💋" /></div>
     </div>
     <div class="form-group"><label>Footer Credit</label><input class="form-input" id="footer-credit" value="${esc(c.site.footerCredit)}" /></div>`;
 }
@@ -200,10 +262,26 @@ function renderBadges(c) {
     <button class="admin-btn admin-btn-neon" id="add-badge">+ Add Badge</button>`;
 }
 
-function renderAbout(c) {
-  return `<h3>About Page</h3>
-    <div class="form-group"><label>Title</label><input class="form-input" id="about-title" value="${esc(c.about.title)}" /></div>
-    <div class="form-group"><label>Body (HTML ok)</label><textarea class="form-textarea" id="about-body" rows="10">${esc(c.about.body)}</textarea></div>`;
+function renderHome(c) {
+  const h = c.home || {};
+  const links = (h.quickLinks || []).map((l, i) => `
+    <div class="sortable-item"><span>${esc(l.title)}</span>
+      <div class="sortable-item-actions">
+        <button class="edit-q-link admin-btn admin-btn-sm admin-btn-neon" data-i="${i}">Edit</button>
+        <button class="del-q-link admin-btn admin-btn-sm admin-btn-danger" data-i="${i}">✕</button>
+      </div></div>`).join('');
+  return `<h3>Home Profile Box</h3>
+    <p class="admin-hint">About blurb and quick links live inside the main profile card on Home — no separate About page.</p>
+    <div class="form-group"><label>About blurb (HTML ok)</label>
+      <textarea class="form-textarea" id="home-about" rows="6">${esc(h.aboutBody || '')}</textarea></div>
+    <div class="admin-divider"></div>
+    <div class="form-group"><label>Quick Links heading</label>
+      <input class="form-input" id="home-ql-title" value="${esc(h.quickLinksTitle || 'Quick Links')}" /></div>
+    <div class="sortable-list" id="ql-list">${links || '<p class="admin-hint">No quick links yet</p>'}</div>
+    <button class="admin-btn admin-btn-neon admin-btn-sm" id="add-q-link">+ Add Quick Link</button>
+    <div class="form-group" style="margin-top:16px"><label>Promotions teaser (underlined link on Home)</label>
+      <input class="form-input" id="home-promo-cta" value="${esc(h.promoCtaText || '')}"
+        placeholder="Want more info? Check out Promotions" /></div>`;
 }
 
 function renderPromos(c) {
@@ -269,15 +347,24 @@ function renderSpecial(c) {
 
 function bindSection(sec) {
   if (sec === 'theme') {
+    if (!draft.theme.effects) draft.theme.effects = { ...DEFAULT_THEME_EFFECTS };
     $$('.theme-preset').forEach(el => el.addEventListener('click', () => {
       draft.theme.preset = el.dataset.theme;
-      renderSection();
+      $$('.theme-preset').forEach(p => p.classList.toggle('active', p.dataset.theme === draft.theme.preset));
     }));
+    $('#fx-profile')?.addEventListener('change', e => { draft.theme.effects.profileGlow = e.target.checked; });
+    $('#fx-nav')?.addEventListener('change', e => { draft.theme.effects.navGlow = e.target.checked; });
+    $('#fx-panel')?.addEventListener('change', e => { draft.theme.effects.panelGlow = e.target.checked; });
+    $('#fx-revert-original')?.addEventListener('click', () => {
+      draft.theme.effects = { ...DEFAULT_THEME_EFFECTS };
+      renderSection();
+      showToast('Effects reverted to original neon style');
+    });
   }
   if (sec === 'media') bindMedia();
   if (sec === 'profile') bindProfile();
   if (sec === 'badges') bindBadges();
-  if (sec === 'about') bindAbout();
+  if (sec === 'home' || sec === 'about') bindHome();
   if (sec === 'promotions') bindPromos();
   if (sec === 'music') bindMusic();
   if (sec === 'special') bindSpecial();
@@ -305,7 +392,6 @@ function bindProfile() {
   $('#p-grad-from')?.addEventListener('input', e => { draft.profile.nameGradientFrom = e.target.value; });
   $('#p-grad-to')?.addEventListener('input', e => { draft.profile.nameGradientTo = e.target.value; });
   $('#enter-text')?.addEventListener('input', e => { draft.site.enterText = e.target.value; });
-  $('#enter-hint')?.addEventListener('input', e => { draft.site.enterHint = e.target.value; });
   $('#footer-credit')?.addEventListener('input', e => { draft.site.footerCredit = e.target.value; });
   $$('.info-line').forEach(inp => inp.addEventListener('input', e => {
     draft.profile.infoLines[+inp.dataset.idx] = e.target.value;
@@ -372,9 +458,49 @@ function openBadgeModal(idx) {
   });
 }
 
-function bindAbout() {
-  $('#about-title')?.addEventListener('input', e => { draft.about.title = e.target.value; });
-  $('#about-body')?.addEventListener('input', e => { draft.about.body = e.target.value; });
+function bindHome() {
+  if (!draft.home) draft.home = {};
+  $('#home-about')?.addEventListener('input', e => { draft.home.aboutBody = e.target.value; });
+  $('#home-ql-title')?.addEventListener('input', e => { draft.home.quickLinksTitle = e.target.value; });
+  $('#home-promo-cta')?.addEventListener('input', e => { draft.home.promoCtaText = e.target.value; });
+  $('#add-q-link')?.addEventListener('click', () => {
+    if (!draft.home.quickLinks) draft.home.quickLinks = [];
+    draft.home.quickLinks.push({ id: uid(), title: 'New Link', subtitle: '', url: 'https://', accent: '#b57bff', visible: true });
+    renderSection();
+  });
+  $$('.edit-q-link').forEach(b => b.addEventListener('click', () => openQuickLinkModal(+b.dataset.i)));
+  $$('.del-q-link').forEach(b => b.addEventListener('click', () => {
+    draft.home.quickLinks.splice(+b.dataset.i, 1);
+    renderSection();
+  }));
+}
+
+function openQuickLinkModal(idx) {
+  const l = draft.home.quickLinks[idx];
+  const modal = document.createElement('div');
+  modal.className = 'admin-modal';
+  modal.innerHTML = `<div class="admin-modal-content"><h3>Edit Quick Link</h3>
+    <div class="form-group"><label>Title</label><input class="form-input" id="ql-title" value="${esc(l.title)}" /></div>
+    <div class="form-group"><label>Small text underneath</label><input class="form-input" id="ql-sub" value="${esc(l.subtitle || '')}" /></div>
+    <div class="form-group"><label>URL</label><input class="form-input" id="ql-url" value="${esc(l.url)}" /></div>
+    <div class="form-group"><label>Accent color</label><input type="color" class="form-color" id="ql-accent" value="${l.accent || '#b57bff'}" /></div>
+    <label class="form-check"><input type="checkbox" id="ql-vis" ${l.visible !== false ? 'checked' : ''} /> Visible</label>
+    <div class="modal-actions"><button class="admin-btn admin-btn-primary" id="ql-save">Save</button>
+      <button class="admin-btn admin-btn-secondary" id="ql-cancel">Cancel</button></div></div>`;
+  document.body.appendChild(modal);
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  $('#ql-cancel', modal)?.addEventListener('click', () => modal.remove());
+  $('#ql-save', modal)?.addEventListener('click', () => {
+    Object.assign(l, {
+      title: $('#ql-title', modal).value,
+      subtitle: $('#ql-sub', modal).value,
+      url: $('#ql-url', modal).value,
+      accent: $('#ql-accent', modal).value,
+      visible: $('#ql-vis', modal).checked,
+    });
+    modal.remove();
+    renderSection();
+  });
 }
 
 function bindPromos() {

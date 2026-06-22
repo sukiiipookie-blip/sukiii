@@ -6,7 +6,7 @@ import {
   initSupabase, loadConfigFromSupabase, loadConfigFromLocal,
   getConfig, replaceConfig, subscribe,
 } from './state.js';
-import { createDefaultConfig, normalizeSiteConfig, THEMES, AVATAR_FRAMES } from './defaults.js';
+import { createDefaultConfig, normalizeSiteConfig, THEMES, AVATAR_FRAMES, DEFAULT_THEME_EFFECTS } from './defaults.js';
 import { initAuth, getIsAdmin, showAuthGate, setAdminReadyCallback, openAdminPanel, getSiteUser } from './auth.js';
 import { loadComments, postComment, deleteComment, subscribeComments } from './comments.js';
 import { hasPermission, isOwner } from './permissions.js';
@@ -23,9 +23,35 @@ let commentsCache = [];
 let commentsSubscribed = false;
 let syazHeartCleanup = null;
 
+const SESSION_ENTER_KEY = 'suki:entered';
+
+function persistEnterState() {
+  try { sessionStorage.setItem(SESSION_ENTER_KEY, '1'); } catch (_) { /* private mode */ }
+}
+
+function restoreEnterState() {
+  if (window.__sukiEntered) return true;
+  try {
+    if (sessionStorage.getItem(SESSION_ENTER_KEY) === '1') {
+      window.__sukiEntered = true;
+      $('#enter-gate')?.classList.add('dismissed');
+      $('#app')?.classList.add('ready');
+      $('#app')?.classList.remove('app-hidden');
+      return true;
+    }
+  } catch (_) { /* ignore */ }
+  return false;
+}
+
 /* ── Bootstrap ── */
 async function init() {
   try {
+    if (window.__sukiEntered) {
+      const cfg = config || normalizeSiteConfig(getConfig());
+      config = cfg;
+      renderAll(cfg);
+    }
+
     await initSupabase();
     await initAuth();
 
@@ -40,6 +66,7 @@ async function init() {
     subscribe((c) => {
       config = normalizeSiteConfig(c);
       applyTheme(config);
+      if (!$('#enter-gate')?.classList.contains('dismissed')) setupEnterGate(config);
       renderAll(config);
     });
 
@@ -54,6 +81,7 @@ async function init() {
       else showAuthGate('login');
     }
     if (location.hash === `#${REGISTER_HASH}`) showAuthGate('register');
+    if (location.hash === '#home') page = 'home';
   } catch (err) {
     console.error('Init failed:', err);
     config = createDefaultConfig();
@@ -65,11 +93,28 @@ async function init() {
 
 /* ── Enter gate — wire immediately so clicks always work ── */
 let enterGateWired = false;
-let typewriterTimer = null;
+let enterTypewriterTimer = null;
+let enterCopyDone = '';
+let enterCopyRunning = false;
+
+function dismissEnterGate() {
+  const gate = $('#enter-gate');
+  if (!gate || gate.classList.contains('dismissed')) return;
+  gate.classList.add('dismissed');
+  window.__sukiEntered = true;
+  persistEnterState();
+  $('#app')?.classList.add('ready');
+  $('#app')?.classList.remove('app-hidden');
+  const cfg = config || createDefaultConfig();
+  if (!config) config = cfg;
+  renderAll(cfg);
+  initMusic(cfg);
+}
 
 function wireEnterGate() {
   const gate = $('#enter-gate');
-  if (!gate || enterGateWired) return;
+  if (!gate || gate.dataset.wired === '1') return;
+  gate.dataset.wired = '1';
   enterGateWired = true;
 
   gate.setAttribute('role', 'button');
@@ -83,40 +128,57 @@ function wireEnterGate() {
       dismissEnterGate();
     }
   });
-
-  updateEnterGateCopy(createDefaultConfig());
-}
-
-function dismissEnterGate() {
-  const gate = $('#enter-gate');
-  if (!gate || gate.classList.contains('dismissed')) return;
-  gate.classList.add('dismissed');
-  $('#app')?.classList.add('ready');
-  $('#app')?.classList.remove('app-hidden');
-  initMusic(config || createDefaultConfig());
-  if (config) renderAll(config);
 }
 
 function updateEnterGateCopy(cfg) {
-  const textEl = $('#enter-text');
-  const hintEl = $('#enter-hint');
-  if (!textEl) return;
+  const wrap = $('#enter-text');
+  const typedEl = $('#enter-typed');
+  const gate = $('#enter-gate');
+  if (!wrap || gate?.classList.contains('dismissed')) return;
 
-  const text = cfg.site?.enterText || 'click to unlock yourself';
-  const hint = cfg.site?.enterHint || 'tap anywhere · you\'re clear to enter';
+  const text = cfg.site?.enterText || 'Click to see whats waiting for you 💋';
+  const current = typedEl ? typedEl.textContent : wrap.textContent;
+  if (enterCopyDone === text && current === text) return;
+  if (enterCopyRunning && wrap.dataset.pendingText === text) return;
 
-  if (hintEl) hintEl.textContent = hint;
+  startEnterTypewriter(text);
+}
 
-  if (typewriterTimer) clearTimeout(typewriterTimer);
-  textEl.textContent = '';
+function startEnterTypewriter(text) {
+  const wrap = $('#enter-text');
+  const typedEl = $('#enter-typed');
+  if (!wrap) return;
+
+  if (enterTypewriterTimer) {
+    clearTimeout(enterTypewriterTimer);
+    enterTypewriterTimer = null;
+  }
+
+  enterCopyRunning = true;
+  enterCopyDone = '';
+  wrap.dataset.pendingText = text;
+  wrap.setAttribute('data-text', text);
+  wrap.classList.remove('enter-glitch-active');
+
+  const target = typedEl || wrap;
+  target.textContent = '';
+
+  const chars = [...text];
   let i = 0;
-  const type = () => {
-    if (i < text.length) {
-      textEl.textContent += text[i++];
-      typewriterTimer = setTimeout(type, 45 + Math.random() * 35);
+  const step = () => {
+    if ($('#enter-gate')?.classList.contains('dismissed')) {
+      enterCopyRunning = false;
+      return;
+    }
+    if (i < chars.length) {
+      target.textContent += chars[i++];
+      enterTypewriterTimer = setTimeout(step, 42 + Math.random() * 38);
+    } else {
+      enterCopyRunning = false;
+      enterCopyDone = text;
     }
   };
-  type();
+  step();
 }
 
 function setupEnterGate(cfg) {
@@ -124,7 +186,42 @@ function setupEnterGate(cfg) {
 }
 
 /* ── Theme ── */
+function applySiteMeta(cfg) {
+  const site = cfg.site || {};
+  document.title = site.title || 'Suki | Creator Hub';
+
+  const favicon = site.favicon || 'assets/site-icon.svg';
+  const isSvg = /\.svg(\?|$)/i.test(favicon);
+  const pngFallback = site.faviconPng || 'assets/site-icon-32.png';
+  const appleIcon = site.appleTouchIcon || site.faviconPng || pngFallback || favicon;
+
+  document.querySelectorAll('link[rel="icon"], link[rel="alternate icon"], link[rel="shortcut icon"], link[rel="apple-touch-icon"]').forEach(el => el.remove());
+
+  const addIcon = (attrs) => {
+    const link = document.createElement('link');
+    Object.entries(attrs).forEach(([k, v]) => {
+      if (v) link.setAttribute(k, v);
+    });
+    link.dataset.siteIcon = '1';
+    document.head.appendChild(link);
+  };
+
+  if (isSvg) {
+    addIcon({ rel: 'icon', href: favicon, type: 'image/svg+xml' });
+    addIcon({ rel: 'alternate icon', href: pngFallback, type: 'image/png', sizes: '32x32' });
+  } else {
+    addIcon({ rel: 'icon', href: favicon, type: 'image/png', sizes: '32x32' });
+    addIcon({ rel: 'shortcut icon', href: favicon });
+  }
+  addIcon({ rel: 'apple-touch-icon', href: appleIcon, sizes: '180x180' });
+}
+
 function applyTheme(cfg) {
+  applySiteMeta(cfg);
+  const fx = cfg.theme?.effects || DEFAULT_THEME_EFFECTS;
+  document.body.classList.toggle('fx-profile-glow', fx.profileGlow !== false);
+  document.body.classList.toggle('fx-nav-glow', fx.navGlow !== false);
+  document.body.classList.toggle('fx-panel-glow', fx.panelGlow !== false);
   const preset = THEMES[cfg.theme?.preset] || THEMES.lavenderGalaxy;
   const root = document.documentElement;
   Object.entries(preset.vars).forEach(([k, v]) => root.style.setProperty(k, v));
@@ -168,14 +265,23 @@ function renderNav(cfg) {
   const syazOn = cfg.syazTribute?.enabled && cfg.syazTribute?.showNavTab !== false;
   const syazLabel = escapeHtml(cfg.syazTribute?.navLabel || 'Syaz');
 
+  const brand = escapeHtml(cfg.profile?.displayName || 'Suki');
+
   nav.innerHTML = `
-    <button class="nav-btn ${page === 'home' ? 'active' : ''}" data-page="home">Home</button>
-    <button class="nav-btn ${page === 'about' ? 'active' : ''}" data-page="about">About</button>
-    <button class="nav-btn pulse-neon ${page === 'promotions' ? 'active' : ''}" data-page="promotions">Promotions</button>
-    ${syazOn ? `<button class="nav-btn pulse-syaz ${page === 'syaz' ? 'active' : ''}" data-page="syaz">♥ ${syazLabel}</button>` : ''}
-    <button class="nav-btn ${page === 'comments' ? 'active' : ''}" data-page="comments">Comments</button>
-    <span class="nav-divider"></span>
-    <button class="nav-btn admin-btn" id="nav-admin">${isAdmin ? 'Panel' : 'Admin'}</button>
+    <button type="button" class="nav-brand" data-page="home">${brand}</button>
+    <div class="hub-nav-menu" aria-label="Main navigation">
+      <div class="hub-nav-links">
+        <button type="button" class="nav-btn ${page === 'home' ? 'active' : ''}" data-page="home">Home</button>
+        <span class="nav-sep" aria-hidden="true"></span>
+        <button type="button" class="nav-btn ${page === 'promotions' ? 'active' : ''}" data-page="promotions">Promotions</button>
+        ${syazOn ? `<span class="nav-sep" aria-hidden="true"></span>
+        <button type="button" class="nav-btn nav-btn-syaz ${page === 'syaz' ? 'active' : ''}" data-page="syaz">♥ ${syazLabel}</button>` : ''}
+        <span class="nav-sep" aria-hidden="true"></span>
+        <button type="button" class="nav-btn ${page === 'comments' ? 'active' : ''}" data-page="comments">Comments</button>
+      </div>
+      <span class="nav-sep nav-sep-major" aria-hidden="true"></span>
+      <button type="button" class="nav-btn admin-btn" id="nav-admin">${isAdmin ? 'Panel' : 'Admin'}</button>
+    </div>
   `;
   nav.querySelectorAll('[data-page]').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -196,19 +302,12 @@ function renderMain(cfg) {
 
   if (page === 'syaz' && !cfg.syazTribute?.enabled) page = 'home';
 
+  if (page === 'about') page = 'home';
+
   if (page === 'home') {
     main.innerHTML = renderProfileCard(cfg);
     updateNowPlaying();
     bindSyazChip(main);
-    return;
-  }
-
-  if (page === 'about') {
-    main.innerHTML = `
-      <div class="page-panel">
-        <h1 class="page-title">${escapeHtml(cfg.about?.title || 'About')}</h1>
-        <div class="content-card" id="about-content">${cfg.about?.body || ''}</div>
-      </div>`;
     bindTabLinks(main);
     return;
   }
@@ -262,7 +361,7 @@ function renderProfileCard(cfg) {
     const inner = b.iconUrl
       ? `<img src="${safeAttr(b.iconUrl)}" alt="" class="badge-img" />`
       : (isDev ? '&lt;/&gt;' : escapeHtml(b.icon || '★'));
-    return `<span class="badge-icon ${isDev ? 'dev' : ''}" style="--bf:${b.colorFrom || '#b57bff'};--bt:${b.colorTo || '#e066ff'}">
+    return `<span class="badge-icon ${isDev ? 'dev' : ''}">
       ${inner}
       <span class="badge-tip"><strong>${escapeHtml(b.label)}</strong>${escapeHtml(b.tooltip || '')}</span>
     </span>`;
@@ -271,7 +370,7 @@ function renderProfileCard(cfg) {
   const syaz = cfg.syazTribute;
   const syazBadge = syaz?.enabled && syaz.showBadge ? `
     <span class="badge-icon badge-syaz">
-      ${syaz.chipAvatar ? `<img src="${safeAttr(syaz.chipAvatar)}" alt="" class="badge-pfp" />` : '♥'}
+      ${syaz.chipAvatar ? `<img src="${safeAttr(syaz.chipAvatar)}" alt="" class="badge-img" />` : '♥'}
       <span class="badge-tip"><strong>${escapeHtml(syaz.badgeLabel || 'Syaz')}</strong>${escapeHtml(syaz.badgeTooltip || '')}</span>
     </span>` : '';
 
@@ -284,6 +383,29 @@ function renderProfileCard(cfg) {
   const socials = (cfg.socials || []).filter(s => s.visible !== false).map(s =>
     `<a class="social-btn" href="${escapeHtml(s.url)}" target="_blank" rel="noopener" aria-label="${s.platform}">${socialIcon(s.platform)}</a>`
   ).join('');
+
+  const home = cfg.home || {};
+  const aboutBlock = home.aboutBody
+    ? `<div class="profile-about">${home.aboutBody}</div>`
+    : '';
+
+  const qlTitle = home.quickLinksTitle || 'Quick Links';
+  const quickLinks = (home.quickLinks || []).filter(l => l.visible !== false);
+  const quickLinksHtml = quickLinks.length ? `
+    <div class="profile-quick-links">
+      <div class="quick-links-title">${escapeHtml(qlTitle)}</div>
+      <div class="quick-links-grid">
+        ${quickLinks.map(l => `
+          <a class="quick-link-card" href="${escapeHtml(l.url)}" target="_blank" rel="noopener"
+             style="--ql-accent:${l.accent || '#b57bff'};border-color:${l.accent || '#b57bff'}59;background:${l.accent || '#b57bff'}1a">
+            <span class="quick-link-name">${escapeHtml(l.title)}</span>
+            ${l.subtitle ? `<span class="quick-link-sub">${escapeHtml(l.subtitle)}</span>` : ''}
+          </a>
+        `).join('')}
+      </div>
+      ${home.promoCtaText ? `<button type="button" class="promo-cta-link tab-link" data-page="promotions">${escapeHtml(home.promoCtaText)}</button>` : ''}
+    </div>
+  ` : '';
 
   return `
     <div class="profile-card">
@@ -303,7 +425,9 @@ function renderProfileCard(cfg) {
         </div>
       </div>
       <div class="profile-info">${infoLines}<div class="now-playing" id="now-playing"></div></div>
+      ${aboutBlock}
       <div class="profile-socials">${socials}</div>
+      ${quickLinksHtml}
     </div>`;
 }
 
@@ -348,11 +472,11 @@ function bindSyazChip(root) {
 }
 
 function bindTabLinks(root) {
-  root.querySelectorAll('.tab-link[data-page]').forEach(a => {
-    a.addEventListener('click', e => {
+  root.querySelectorAll('.tab-link[data-page]').forEach(el => {
+    el.addEventListener('click', e => {
       e.preventDefault();
       if (syazHeartCleanup) { syazHeartCleanup(); syazHeartCleanup = null; }
-      page = a.dataset.page;
+      page = el.dataset.page;
       renderAll(config);
     });
   });
@@ -583,7 +707,18 @@ function formatTime(iso) {
   return d.toLocaleDateString();
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+let booted = false;
+function boot() {
+  if (booted) return;
+  booted = true;
+  restoreEnterState();
   wireEnterGate();
   init();
+}
+
+document.addEventListener('DOMContentLoaded', boot);
+document.addEventListener('suki:enter', () => {
+  if (!config) config = createDefaultConfig();
+  renderAll(config);
 });
+if (document.readyState !== 'loading') boot();

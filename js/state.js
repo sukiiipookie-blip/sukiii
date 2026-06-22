@@ -66,24 +66,38 @@ export function getSupabase() {
 
 export async function loadConfigFromSupabase() {
   if (!supabase) return null;
-  const { data, error } = await supabase
-    .from('site_config')
-    .select('config')
-    .eq('id', 1)
-    .maybeSingle();
+  try {
+    const query = supabase
+      .from('site_config')
+      .select('config')
+      .eq('id', 1)
+      .maybeSingle();
 
-  if (error) {
-    console.warn('Supabase load error:', error.message);
+    const timeout = new Promise(resolve => setTimeout(() => resolve({ timedOut: true }), 6000));
+    const result = await Promise.race([query, timeout]);
+
+    if (result?.timedOut) {
+      console.warn('Supabase config load timed out');
+      return null;
+    }
+
+    const { data, error } = result;
+    if (error) {
+      console.warn('Supabase load error:', error.message);
+      return null;
+    }
+    if (data?.config) {
+      const defaults = createDefaultConfig();
+      config = normalizeSiteConfig(mergeDeep(defaults, data.config));
+      lastSaved = deepClone(config);
+      notify();
+      return config;
+    }
+    return null;
+  } catch (err) {
+    console.warn('Supabase load failed:', err.message);
     return null;
   }
-  if (data?.config) {
-    const defaults = createDefaultConfig();
-    config = normalizeSiteConfig(mergeDeep(defaults, data.config));
-    lastSaved = deepClone(config);
-    notify();
-    return config;
-  }
-  return null;
 }
 
 export async function saveConfigToSupabase() {
