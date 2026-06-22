@@ -532,7 +532,7 @@ export function normalizeSiteConfig(config) {
       id: s.id || uid(), platform: s.platform || 'link', url: s.url, visible: s.visible !== false,
     }));
   }
-  if (config.profile?.bio && (!config.home?.aboutBody || config.home.aboutBody === defaults.home.aboutBody)) {
+  if (config.profile?.bio && !config.home?.aboutBody?.trim()) {
     config.home.aboutBody = `<p>${config.profile.bio}</p>`;
   }
   if (config.profile?.tagline && !config.profile.infoLines?.length) {
@@ -540,7 +540,7 @@ export function normalizeSiteConfig(config) {
   }
   if (config.tabs) {
     const aboutTab = config.tabs.find(t => t.type === 'about');
-    if (aboutTab?.content?.body && (!config.home.aboutBody || config.home.aboutBody === defaults.home.aboutBody)) {
+    if (aboutTab?.content?.body && !config.home?.aboutBody?.trim()) {
       config.home.aboutBody = aboutTab.content.body;
     }
   }

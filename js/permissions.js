@@ -7,6 +7,7 @@ export const PERMISSION_LABELS = {
   edit_content: 'Home Box & Promotions',
   edit_music: 'Music Player',
   edit_media: 'Uploads & Backgrounds',
+  edit_syaz: 'Edit Syaz Tribute',
   manage_users: 'Manage Admins',
 };
 
@@ -18,6 +19,7 @@ export const DEFAULT_ADMIN_PERMISSIONS = {
   edit_content: false,
   edit_music: false,
   edit_media: false,
+  edit_syaz: false,
 };
 
 export const SECTION_PERMISSION = {
@@ -31,14 +33,14 @@ export const SECTION_PERMISSION = {
   media: 'edit_media',
   comments: 'moderate_comments',
   users: 'manage_users',
-  special: 'manage_users',
+  special: 'edit_syaz',
 };
 
 export const ADMIN_GROUPS = [
   { label: 'Design', sections: ['theme', 'media'] },
-  { label: 'Content', sections: ['profile', 'home', 'badges', 'promotions', 'music'] },
+  { label: 'Content', sections: ['profile', 'home', 'badges', 'promotions', 'music', 'special'] },
   { label: 'Community', sections: ['comments'] },
-  { label: 'Owner', sections: ['site', 'bans', 'special', 'users', 'audit'], ownerOnly: true },
+  { label: 'Owner', sections: ['site', 'bans', 'users', 'audit'], ownerOnly: true },
 ];
 
 export function isOwner(role) { return role === 'owner'; }
