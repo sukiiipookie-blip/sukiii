@@ -13,7 +13,7 @@ export const SUPABASE_ANON_KEY = 'sb_publishable_IHaKkecqmpIn3ILmAjbjlw_00T-2QyY
  */
 export const OWNER_EMAIL = 'sukiiipookie@gmail.com';
 
-/** Logo clicks required to open admin login */
+/** @deprecated — use Admin button in nav */
 export const ADMIN_LOGO_CLICKS = 5;
 
 /** Visiting #suki-admin opens login, #suki-register opens registration */

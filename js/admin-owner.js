@@ -19,7 +19,7 @@ export function renderUsersSection() {
       <p class="admin-hint" style="margin-bottom:12px">Creates their login + permissions instantly. You'll need to sign back in after.</p>
       <div class="form-group"><label>Email</label><input class="form-input" id="new-admin-email" type="email" /></div>
       <div class="form-group"><label>Display Name</label><input class="form-input" id="new-admin-name" /></div>
-      <div class="form-group"><label>Password</label><input class="form-input" id="new-admin-pass" type="password" minlength="6" /></div>
+      <div class="form-group"><label>Password</label><input class="form-input" id="new-admin-pass" type="password" /></div>
       <div class="form-group"><label>Permissions</label><div class="perm-grid" id="new-admin-perms">${renderPermCheckboxes('new', DEFAULT_ADMIN_PERMISSIONS)}</div></div>
       <button class="admin-btn admin-btn-primary" id="btn-create-admin" style="width:100%;margin-bottom:20px">Create Admin Account</button>
       <h4 style="margin-bottom:12px">Or invite only (they register themselves)</h4>

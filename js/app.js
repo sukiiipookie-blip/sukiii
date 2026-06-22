@@ -10,11 +10,9 @@ import { initCursor } from './cursor.js';
 import { initAuth, setAdminReadyCallback, openAdminPanel, showAuthGate, getIsAdmin } from './auth.js';
 import { initAdmin, openAdminUI } from './admin.js';
 import { initVisitors } from './visitors.js';
-import { ADMIN_LOGO_CLICKS, ADMIN_HASH, REGISTER_HASH } from './config.js';
+import { ADMIN_HASH, REGISTER_HASH } from './config.js';
 import { $, debounce } from './utils.js';
 
-let logoClicks = 0;
-let logoClickTimer = null;
 let lastMusicKey = '';
 let lastCursor = '';
 
@@ -40,11 +38,27 @@ async function bootstrap() {
   initAdmin((c) => applyAll(normalizeSiteConfig(c), false));
 
   setAdminReadyCallback(() => {
+    applyAll(normalizeSiteConfig(getConfig()), false);
     openAdminUI((c) => applyAll(normalizeSiteConfig(c), false));
     openAdminPanel();
   });
 
   setupAdminAccess();
+  setupAdminNavButton();
+  document.addEventListener('suki:auth-change', () => {
+    applyAll(normalizeSiteConfig(getConfig()), false);
+  });
+}
+
+function setupAdminNavButton() {
+  document.addEventListener('suki:admin-open', () => {
+    if (getIsAdmin()) {
+      openAdminUI((c) => applyAll(normalizeSiteConfig(c), false));
+      openAdminPanel();
+    } else {
+      showAuthGate();
+    }
+  });
 }
 
 function applyAll(config, full = false) {
@@ -64,32 +78,6 @@ function applyAll(config, full = false) {
   if (full || cur !== lastCursor) {
     initCursor(config);
     lastCursor = cur;
-  }
-
-  rebindLogo();
-}
-
-function rebindLogo() {
-  const logo = $('#nav-logo');
-  if (!logo) return;
-  if (logo.dataset.bound) return;
-  logo.dataset.bound = '1';
-  logo.addEventListener('click', onLogoClick);
-}
-
-function onLogoClick() {
-  logoClicks += 1;
-  clearTimeout(logoClickTimer);
-  logoClickTimer = setTimeout(() => { logoClicks = 0; }, 2000);
-
-  if (logoClicks >= ADMIN_LOGO_CLICKS) {
-    logoClicks = 0;
-    if (getIsAdmin()) {
-      openAdminUI((c) => applyAll(normalizeSiteConfig(c), false));
-      openAdminPanel();
-    } else {
-      showAuthGate();
-    }
   }
 }
 

@@ -3,14 +3,26 @@ import { escapeHtml, $ } from './utils.js';
 import { headingClass } from './theme-engine.js';
 import { loadComments, renderCommentsUI, subscribeComments, refreshCommentsList } from './comments.js';
 import { renderVisitorPillHtml, updateVisitorPill, getVisitorCount } from './visitors.js';
+import { getIsAdmin } from './auth.js';
 
+let viewMode = 'home';
 let activeTabId = null;
 let commentsMounted = false;
+let cachedConfig = null;
 
 export function renderSite(config) {
+  cachedConfig = config;
   renderNav(config);
-  renderProfile(config);
-  renderTabContent(config);
+  if (viewMode === 'home') {
+    renderProfile(config);
+    $('#hero-section')?.classList.remove('hidden');
+    $('#tab-content')?.classList.add('hidden');
+    $('#tab-content').innerHTML = '';
+  } else {
+    $('#hero-section')?.classList.add('hidden');
+    $('#tab-content')?.classList.remove('hidden');
+    renderTabContent(config);
+  }
   renderMaintenance(config);
   renderEnterScreen(config);
 }
@@ -20,7 +32,14 @@ export function getActiveTabId() {
 }
 
 export function setActiveTab(id) {
+  viewMode = 'tab';
   activeTabId = id;
+}
+
+export function goHome() {
+  viewMode = 'home';
+  activeTabId = null;
+  if (cachedConfig) renderSite(cachedConfig);
 }
 
 function renderNav(config) {
@@ -31,31 +50,46 @@ function renderNav(config) {
   nav.className = `nav-bar style-${style}`;
 
   const visibleTabs = (config.tabs || []).filter(t => t.visible);
-  if (!activeTabId && visibleTabs.length) activeTabId = visibleTabs[0].id;
 
   const tabsHtml = visibleTabs.map(tab => `
     <li>
-      <button class="nav-tab ${tab.id === activeTabId ? 'active' : ''}"
+      <button class="nav-tab ${viewMode === 'tab' && tab.id === activeTabId ? 'active' : ''}"
               data-tab="${tab.id}">${escapeHtml(tab.label)}</button>
     </li>
   `).join('');
 
   nav.innerHTML = `
-    <div class="nav-logo" id="nav-logo" title="✨">
-      <div class="nav-logo-icon">♡</div>
-      <span class="nav-logo-text">${escapeHtml(config.profile?.displayName?.split(' ')[0] || 'Hub')}</span>
-    </div>
+    <button class="nav-brand ${viewMode === 'home' ? 'active' : ''}" id="nav-home" type="button" title="Home">
+      <img class="nav-brand-avatar" src="${escapeHtml(config.profile?.avatar || defaultAvatar())}" alt="" />
+      <span class="nav-brand-text">${escapeHtml(config.profile?.displayName?.split(' ')[0] || 'Home')}</span>
+    </button>
     <button class="nav-mobile-toggle" id="nav-toggle" aria-label="Menu">☰</button>
-    <ul class="nav-tabs" id="nav-tabs">${tabsHtml}</ul>
+    <ul class="nav-tabs" id="nav-tabs">
+      ${tabsHtml}
+      <li class="nav-admin-item">
+        <button class="nav-tab nav-admin-btn ${getIsAdmin() ? 'nav-admin-active' : ''}" id="nav-admin-btn" type="button">${getIsAdmin() ? 'Panel' : 'Admin'}</button>
+      </li>
+    </ul>
   `;
 
-  $$('#nav-tabs .nav-tab', nav).forEach(btn => {
+  $('#nav-home')?.addEventListener('click', () => goHome());
+
+  $$('#nav-tabs .nav-tab[data-tab]', nav).forEach(btn => {
     btn.addEventListener('click', () => {
+      viewMode = 'tab';
       activeTabId = btn.dataset.tab;
-      renderTabContent(config);
-      $$('#nav-tabs .nav-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === activeTabId));
+      renderSite(config);
+      $$('#nav-tabs .nav-tab[data-tab]').forEach(b => {
+        b.classList.toggle('active', b.dataset.tab === activeTabId);
+      });
+      $('#nav-home')?.classList.remove('active');
       $('#nav-tabs')?.classList.remove('open');
     });
+  });
+
+  $('#nav-admin-btn')?.addEventListener('click', () => {
+    document.dispatchEvent(new CustomEvent('suki:admin-open'));
+    $('#nav-tabs')?.classList.remove('open');
   });
 
   $('#nav-toggle')?.addEventListener('click', () => {
@@ -70,48 +104,45 @@ function renderProfile(config) {
   const p = config.profile;
   const hc = headingClass(config.typography?.headingEffect);
   const avatarBorder = `avatar-border-${p.avatarBorder || 'glow'}`;
-  const avatarHover = `avatar-hover-${p.avatarHover || 'pulse'}`;
+  const avatarHover = `avatar-hover-${p.avatarHover || 'float'}`;
   const avatarSrc = p.avatar || defaultAvatar();
 
   const badgesHtml = (config.badges || [])
     .filter(b => b.visible)
-    .map(b => renderProfileBadge(b)).join('');
+    .map(b => renderDiscordBadge(b)).join('');
 
   const socialHtml = (config.socialLinks || [])
     .filter(s => s.visible)
     .map(s => {
       const plat = SOCIAL_PLATFORMS[s.platform] || SOCIAL_PLATFORMS.link;
       return `
-        <a href="${escapeHtml(s.url)}" target="_blank" rel="noopener" class="social-link" data-platform="${s.platform}">
+        <a href="${escapeHtml(s.url)}" target="_blank" rel="noopener" class="social-link" data-platform="${s.platform}" aria-label="${plat.label}">
           ${plat.icon}
           <span class="social-tooltip">${plat.label}</span>
         </a>
       `;
     }).join('');
 
-  const bannerStyle = p.banner ? `background-image:url(${p.banner})` : '';
   const showVisitors = config.site?.showVisitorPill !== false;
   const visitorHtml = showVisitors ? renderVisitorPillHtml() : '';
 
   hero.innerHTML = `
-    <div class="profile-card glass-card">
-      <div class="profile-banner" style="${bannerStyle}"></div>
-      <div class="profile-body">
-        <div class="avatar-wrap">
-          <img class="avatar ${avatarBorder} ${avatarHover}" src="${avatarSrc}" alt="${escapeHtml(p.displayName)}" />
-        </div>
-        <div class="profile-info">
-          <h1 class="profile-name ${hc}">${escapeHtml(p.displayName)}</h1>
-          ${p.nickname ? `<div class="profile-nickname">${escapeHtml(p.nickname)}</div>` : ''}
-          <div class="profile-username">${escapeHtml(p.username)}</div>
-          <div class="profile-tagline">${escapeHtml(p.tagline)}</div>
+    <section class="home-profile">
+      <div class="home-profile-inner">
+        <img class="home-avatar ${avatarBorder} ${avatarHover}" src="${avatarSrc}" alt="${escapeHtml(p.displayName)}" />
+        <div class="home-identity">
+          <div class="home-name-row">
+            <h1 class="home-name ${hc}">${escapeHtml(p.displayName)}</h1>
+            ${badgesHtml ? `<div class="discord-badges">${badgesHtml}</div>` : ''}
+          </div>
+          ${p.nickname ? `<div class="home-nickname">${escapeHtml(p.nickname)}</div>` : ''}
+          <div class="home-username">${escapeHtml(p.username)}</div>
+          ${p.tagline ? `<p class="home-tagline">${escapeHtml(p.tagline)}</p>` : ''}
           ${visitorHtml}
-          <p class="profile-bio">${escapeHtml(p.bio)}</p>
-          <div class="role-pills">${badgesHtml}</div>
-          <div class="social-row">${socialHtml}</div>
+          ${socialHtml ? `<div class="social-row home-social">${socialHtml}</div>` : ''}
         </div>
       </div>
-    </div>
+    </section>
   `;
 
   if (showVisitors) updateVisitorPill(getVisitorCount());
@@ -133,13 +164,16 @@ function renderTabContent(config) {
     <section class="content-section">
       <div class="section-header">
         <h2 class="${hc}">${escapeHtml(tab.content?.heading || tab.label)}</h2>
-        ${tab.content?.subtitle ? `<p>${escapeHtml(tab.content.subtitle)}</p>` : ''}
+        ${tab.content?.subtitle ? `<p class="section-subtitle">${escapeHtml(tab.content.subtitle)}</p>` : ''}
       </div>
   `;
 
   switch (tab.type) {
     case 'about':
-      html += `<div class="glass-card ${hoverClass} about-content">${tab.content?.body || ''}</div>`;
+      html += `<div class="content-body glass-card ${hoverClass} about-content">${tab.content?.body || ''}</div>`;
+      if (config.profile?.bio) {
+        html += `<div class="content-body glass-card ${hoverClass} profile-bio-block"><p>${escapeHtml(config.profile.bio)}</p></div>`;
+      }
       break;
 
     case 'links':
@@ -155,15 +189,15 @@ function renderTabContent(config) {
       break;
 
     case 'comments':
-      html += `<div id="comments-mount"></div>`;
+      html += `<div id="comments-mount" class="glass-card"></div>`;
       break;
 
     case 'custom':
-      html += `<div class="glass-card ${hoverClass}">${tab.content?.html || ''}</div>`;
+      html += `<div class="content-body glass-card ${hoverClass}">${tab.content?.html || ''}</div>`;
       break;
 
     default:
-      html += `<div class="glass-card ${hoverClass}"><p>Content coming soon ✨</p></div>`;
+      html += `<div class="content-body glass-card ${hoverClass}"><p>Content coming soon</p></div>`;
   }
 
   html += '</section>';
@@ -179,21 +213,23 @@ function renderTabContent(config) {
   if (tab.type === 'comments') mountComments(config, container);
 }
 
-function renderProfileBadge(b) {
+function renderDiscordBadge(b) {
   const isDev = b.badgeType === 'developer';
-  const grad = b.useGradient && b.gradientFrom && b.gradientTo
-    ? `background:linear-gradient(135deg,${b.gradientFrom},${b.gradientTo});color:#fff;border-color:transparent;box-shadow:0 0 18px ${b.gradientFrom}55;`
-    : `background:${b.bgColor};color:${b.textColor};border-color:${b.borderColor};--pill-bg:${b.bgColor}`;
-  const icon = isDev
-    ? '<span class="role-icon dev-icon">&lt;/&gt;</span>'
-    : `<span class="role-icon">${b.icon || '✨'}</span>`;
+  const from = b.gradientFrom || b.bgColor || '#b57bff';
+  const to = b.gradientTo || b.textColor || '#e066ff';
+  const icon = isDev ? '&lt;/&gt;' : (b.icon || '★');
+  const label = escapeHtml(b.label || 'Badge');
+  const tip = escapeHtml(b.tooltip || b.label || '');
+
   return `
-    <div class="role-pill style-${b.style || 'glow'} ${isDev ? 'role-pill-developer' : ''}"
-         style="${grad}">
-      ${icon}
-      <span>${escapeHtml(b.label)}</span>
-      ${b.tooltip ? `<div class="role-tooltip">${escapeHtml(b.tooltip)}</div>` : ''}
-    </div>
+    <span class="d-badge ${isDev ? 'd-badge-dev' : ''}"
+          style="--badge-from:${from};--badge-to:${to}">
+      <span class="d-badge-icon">${icon}</span>
+      <span class="d-badge-tip">
+        <strong>${label}</strong>
+        <span>${tip}</span>
+      </span>
+    </span>
   `;
 }
 
@@ -244,7 +280,7 @@ function renderPromos(promos, hoverClass) {
 }
 
 function renderGallery(items) {
-  if (!items.length) return '<p style="color:var(--text-muted)">No images yet ✨</p>';
+  if (!items.length) return '<p class="empty-hint">No images yet</p>';
   return items.filter(i => i.visible !== false).map(item => `
     <div class="gallery-item">
       <img src="${escapeHtml(item.url)}" alt="${escapeHtml(item.caption || '')}" loading="lazy" />
@@ -301,7 +337,7 @@ function defaultAvatar() {
         <stop offset="0%" stop-color="#c4a0ff"/><stop offset="100%" stop-color="#f0a8d0"/>
       </linearGradient></defs>
       <circle cx="60" cy="60" r="60" fill="url(#g)"/>
-      <text x="60" y="72" text-anchor="middle" font-size="48" fill="#fff">✨</text>
+      <text x="60" y="72" text-anchor="middle" font-size="48" fill="#fff">♡</text>
     </svg>
   `)}`;
 }

@@ -99,7 +99,7 @@ function renderAuthForm(gate) {
         ${isRegister ? `<div class="form-group"><label for="admin-display">Display Name</label><input class="form-input" id="admin-display" placeholder="Your name" /></div>` : ''}
         <div class="form-group">
           <label for="admin-password">Password</label>
-          <input class="form-input" type="password" id="admin-password" autocomplete="${isRegister ? 'new-password' : 'current-password'}" required placeholder="••••••••" minlength="6" />
+          <input class="form-input" type="password" id="admin-password" autocomplete="${isRegister ? 'new-password' : 'current-password'}" required placeholder="••••••••" />
         </div>
         <p class="auth-error hidden" id="auth-error"></p>
         <button type="submit" class="auth-submit-btn" id="admin-login-btn">${isRegister ? 'Create Account' : 'Sign In'}</button>
@@ -220,6 +220,7 @@ export async function signOut() {
   currentUser = null;
   siteUser = null;
   closeAdminPanel();
+  document.dispatchEvent(new CustomEvent('suki:auth-change'));
   showToast('Signed out');
 }
 
