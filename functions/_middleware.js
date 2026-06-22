@@ -1,12 +1,13 @@
 /**
- * Cloudflare Pages edge middleware — IP ban enforcement.
+ * Cloudflare Pages edge middleware — IP ban enforcement (HTML pages only).
  *
- * Required env vars (Cloudflare Pages → Settings → Environment variables):
+ * Env vars (Cloudflare Pages → Settings → Environment variables):
  *   SUPABASE_URL
- *   SUPABASE_SERVICE_ROLE_KEY  (never expose in client code)
+ *   SUPABASE_SERVICE_ROLE_KEY
  */
 
 const CACHE_TTL_MS = 60_000;
+const FETCH_TIMEOUT_MS = 2500;
 
 const DEFAULT_BAN_PAGE = {
   title: "Whoops! This doesn't exist",
@@ -33,21 +34,60 @@ function getClientIp(request) {
   );
 }
 
+function shouldSkipBanCheck(request) {
+  if (request.method !== 'GET' && request.method !== 'HEAD') return true;
+
+  const path = new URL(request.url).pathname;
+  if (
+    path.startsWith('/js/') ||
+    path.startsWith('/css/') ||
+    path.startsWith('/assets/') ||
+    path.endsWith('.js') ||
+    path.endsWith('.css') ||
+    path.endsWith('.png') ||
+    path.endsWith('.svg') ||
+    path.endsWith('.ico') ||
+    path.endsWith('.mp3') ||
+    path.endsWith('.webp') ||
+    path.endsWith('.gif') ||
+    path.endsWith('.woff2') ||
+    path.endsWith('.woff')
+  ) {
+    return true;
+  }
+
+  const accept = request.headers.get('Accept') || '';
+  if (accept.includes('text/html') || path === '/' || path.endsWith('.html')) {
+    return false;
+  }
+
+  return true;
+}
+
 async function supabaseFetch(env, path) {
   const url = env.SUPABASE_URL;
   const key = env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !key) return null;
 
-  const res = await fetch(`${url.replace(/\/$/, '')}${path}`, {
-    headers: {
-      apikey: key,
-      Authorization: `Bearer ${key}`,
-      Accept: 'application/json',
-    },
-  });
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
-  if (!res.ok) return null;
-  return res.json();
+  try {
+    const res = await fetch(`${url.replace(/\/$/, '')}${path}`, {
+      signal: controller.signal,
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        Accept: 'application/json',
+      },
+    });
+    if (!res.ok) return null;
+    return res.json();
+  } catch (_) {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 async function refreshCache(env) {
@@ -57,13 +97,12 @@ async function refreshCache(env) {
   ]);
 
   const ips = new Set(
-    (banRows || [])
+    (Array.isArray(banRows) ? banRows : [])
       .map((row) => normalizeIp(row.ip_address))
       .filter(Boolean),
   );
 
   const banPage = configRows?.[0]?.config?.site?.banPage || DEFAULT_BAN_PAGE;
-
   cache = { ips, banPage, at: Date.now() };
   return cache;
 }
@@ -141,16 +180,19 @@ function blockPageHtml(banPage) {
 }
 
 export async function onRequest(context) {
-  const { request, env } = context;
-
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
-    return context.next();
-  }
-
-  const ip = normalizeIp(getClientIp(request));
-  if (!ip) return context.next();
-
   try {
+    if (shouldSkipBanCheck(context.request)) {
+      return context.next();
+    }
+
+    const { request, env } = context;
+    if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+      return context.next();
+    }
+
+    const ip = normalizeIp(getClientIp(request));
+    if (!ip) return context.next();
+
     const { ips, banPage } = await getCache(env);
     if (ips.has(ip)) {
       return new Response(blockPageHtml(banPage), {
@@ -163,7 +205,7 @@ export async function onRequest(context) {
       });
     }
   } catch (_) {
-    return context.next();
+    /* fail open — never break the site */
   }
 
   return context.next();

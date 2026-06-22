@@ -10,19 +10,21 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/hub.css?v=8">
+  <link rel="stylesheet" href="css/hub.css?v=9">
 </head>
 <body>
   <script>
     try {
       if (sessionStorage.getItem('suki:entered') === '1') {
-        document.documentElement.classList.add('suki-entered');
+        window.__sukiEntered = true;
       }
     } catch (e) {}
   </script>
   <!-- Enter gate — inline handler so clicks work even if hub.js is slow/fails -->
   <script>
     (function () {
+      var ENTER_TEXT = 'Click to see whats waiting for you 💋';
+
       function enterSite() {
         var gate = document.getElementById('enter-gate');
         if (!gate || gate.classList.contains('dismissed')) return;
@@ -33,10 +35,34 @@
         try { sessionStorage.setItem('suki:entered', '1'); } catch (e) {}
         document.dispatchEvent(new CustomEvent('suki:enter'));
       }
+
+      function startInlineTypewriter() {
+        if (window.__sukiEntered) return;
+        var el = document.getElementById('enter-typed');
+        if (!el || el.dataset.typing === '1') return;
+        el.dataset.typing = '1';
+        el.textContent = '';
+        var chars = Array.from(ENTER_TEXT);
+        var i = 0;
+        function step() {
+          if (window.__sukiEntered) return;
+          if (i < chars.length) {
+            el.textContent += chars[i++];
+            setTimeout(step, 45 + Math.random() * 30);
+          }
+        }
+        step();
+      }
+
       function wire() {
         var gate = document.getElementById('enter-gate');
         var text = document.getElementById('enter-text');
-        if (text) text.setAttribute('data-text', 'Click to see whats waiting for you 💋');
+        if (text) text.setAttribute('data-text', ENTER_TEXT);
+        if (window.__sukiEntered) {
+          enterSite();
+          return;
+        }
+        startInlineTypewriter();
         if (!gate || gate.dataset.wired) return;
         gate.dataset.wired = '1';
         gate.addEventListener('click', enterSite);
@@ -71,6 +97,6 @@
 
   <div id="toast-container"></div>
 
-  <script type="module" src="js/hub.js?v=8"></script>
+  <script type="module" src="js/hub.js?v=9"></script>
 </body>
 </html>

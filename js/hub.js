@@ -61,13 +61,18 @@ async function init() {
 
     applyTheme(config);
     setupEnterGate(config);
-    renderAll(config);
+    if ($('#enter-gate')?.classList.contains('dismissed') || window.__sukiEntered) {
+      renderAll(config);
+    }
 
     subscribe((c) => {
       config = normalizeSiteConfig(c);
       applyTheme(config);
-      if (!$('#enter-gate')?.classList.contains('dismissed')) setupEnterGate(config);
-      renderAll(config);
+      if ($('#enter-gate')?.classList.contains('dismissed') || window.__sukiEntered) {
+        renderAll(config);
+      } else {
+        setupEnterGate(config);
+      }
     });
 
     setAdminReadyCallback(() => {
@@ -87,7 +92,9 @@ async function init() {
     config = createDefaultConfig();
     applyTheme(config);
     setupEnterGate(config);
-    renderAll(config);
+    if ($('#enter-gate')?.classList.contains('dismissed') || window.__sukiEntered) {
+      renderAll(config);
+    }
   }
 }
 
@@ -128,6 +135,13 @@ function wireEnterGate() {
       dismissEnterGate();
     }
   });
+
+  if (!gate.classList.contains('dismissed') && !window.__sukiEntered) {
+    const typed = $('#enter-typed');
+    if (!typed?.textContent?.trim()) {
+      startEnterTypewriter('Click to see whats waiting for you 💋');
+    }
+  }
 }
 
 function updateEnterGateCopy(cfg) {
@@ -138,8 +152,12 @@ function updateEnterGateCopy(cfg) {
 
   const text = cfg.site?.enterText || 'Click to see whats waiting for you 💋';
   const current = typedEl ? typedEl.textContent : wrap.textContent;
-  if (enterCopyDone === text && current === text) return;
+  if (enterCopyDone === text || current === text) {
+    enterCopyDone = text;
+    return;
+  }
   if (enterCopyRunning && wrap.dataset.pendingText === text) return;
+  if (typedEl?.dataset.typing === '1' && current.length > 0) return;
 
   startEnterTypewriter(text);
 }
