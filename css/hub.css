@@ -146,48 +146,54 @@ body.fx-nav-glow .hub-nav {
 }
 
 .nav-btn.pulse-neon {
-  animation: promo-pulse 2s ease infinite;
-  color: var(--accent-2);
-  border-color: rgba(224, 102, 255, 0.35);
+  animation: promo-pulse 1.6s ease-in-out infinite !important;
+  color: var(--accent-2) !important;
+  border: 1px solid rgba(224, 102, 255, 0.55) !important;
+  will-change: transform, box-shadow;
 }
 
 .nav-btn.pulse-syaz {
-  animation: syaz-nav-pulse 1.8s ease-in-out infinite;
-  color: #ff9ecf;
-  border-color: rgba(255, 107, 203, 0.45);
-  background: rgba(255, 107, 203, 0.08);
+  animation: syaz-nav-pulse 1.4s ease-in-out infinite !important;
+  color: #ff9ecf !important;
+  border: 1px solid rgba(255, 107, 203, 0.6) !important;
+  background: rgba(255, 107, 203, 0.12) !important;
+  will-change: transform, box-shadow;
 }
 
 @keyframes syaz-nav-pulse {
-  0%, 100% { box-shadow: 0 0 6px rgba(255, 107, 203, 0.25); transform: scale(1); }
-  15% { box-shadow: 0 0 20px rgba(255, 107, 203, 0.7); transform: scale(1.05); }
-  30% { box-shadow: 0 0 8px rgba(255, 107, 203, 0.3); transform: scale(1); }
-  45% { box-shadow: 0 0 22px rgba(255, 150, 220, 0.75); transform: scale(1.06); }
-  60% { box-shadow: 0 0 6px rgba(255, 107, 203, 0.2); transform: scale(1); }
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(255, 107, 203, 0.4), 0 0 16px rgba(255, 107, 203, 0.15);
+    transform: scale(1);
+  }
+  25% {
+    box-shadow: 0 0 28px rgba(255, 107, 203, 0.95), 0 0 48px rgba(255, 150, 220, 0.45);
+    transform: scale(1.08);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(255, 107, 203, 0.35), 0 0 20px rgba(255, 107, 203, 0.12);
+    transform: scale(1);
+  }
+  75% {
+    box-shadow: 0 0 32px rgba(255, 120, 210, 1), 0 0 56px rgba(224, 102, 255, 0.4);
+    transform: scale(1.1);
+  }
 }
 
 @keyframes promo-pulse {
-  0%, 100% { box-shadow: 0 0 8px rgba(224, 102, 255, 0.3); transform: scale(1); }
-  50% { box-shadow: 0 0 24px rgba(224, 102, 255, 0.65), 0 0 40px rgba(181, 123, 255, 0.3); transform: scale(1.04); }
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(224, 102, 255, 0.45), 0 0 20px rgba(181, 123, 255, 0.2);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 32px rgba(224, 102, 255, 0.95), 0 0 56px rgba(181, 123, 255, 0.55), 0 0 80px rgba(224, 102, 255, 0.25);
+    transform: scale(1.07);
+  }
 }
 
 .nav-btn.admin-btn { color: var(--accent); font-weight: 600; }
 
 @media (prefers-reduced-motion: reduce) {
-  body.fx-profile-glow .profile-card,
-  body.fx-nav-glow .hub-nav,
-  body.fx-panel-glow .promo-card,
-  body.fx-panel-glow .content-card,
-  body.fx-panel-glow .comments-panel,
-  .nav-btn.pulse-neon,
-  .nav-btn.pulse-syaz,
-  .syaz-nav-chip,
-  .syaz-chip-heart,
-  .badge-syaz,
-  .promo-cta-link,
-  .syaz-page {
-    animation: none !important;
-  }
+  html { scroll-behavior: auto; }
 }
 
 /* ── Main content ── */
@@ -404,16 +410,23 @@ body.fx-panel-glow .comments-panel {
   gap: 6px;
   padding: 5px 12px 5px 5px;
   border-radius: var(--radius-pill);
-  border: 1px solid rgba(255, 107, 203, 0.45);
-  background: linear-gradient(135deg, rgba(255, 107, 203, 0.22), rgba(224, 102, 255, 0.14));
+  border: 1px solid rgba(255, 107, 203, 0.65);
+  background: linear-gradient(135deg, rgba(255, 107, 203, 0.28), rgba(224, 102, 255, 0.18));
   cursor: pointer;
-  animation: syaz-chip-pulse 2.2s ease-in-out infinite;
+  animation: syaz-chip-pulse 1.5s ease-in-out infinite !important;
   font-family: var(--font);
+  will-change: transform, box-shadow;
 }
 
 @keyframes syaz-chip-pulse {
-  0%, 100% { box-shadow: 0 0 8px rgba(255, 107, 203, 0.3); }
-  50% { box-shadow: 0 0 18px rgba(255, 107, 203, 0.65), 0 0 28px rgba(224, 102, 255, 0.25); }
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(255, 107, 203, 0.45), 0 0 20px rgba(255, 107, 203, 0.15);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(255, 107, 203, 0.9), 0 0 48px rgba(224, 102, 255, 0.4);
+    transform: scale(1.06);
+  }
 }
 
 .syaz-chip-av {
@@ -428,12 +441,16 @@ body.fx-panel-glow .comments-panel {
   font-size: 0.85rem;
   color: #ff6bcb;
   padding-left: 4px;
-  animation: syaz-heart-beat 1.3s ease-in-out infinite;
+  display: inline-block;
+  animation: syaz-heart-beat 0.9s ease-in-out infinite !important;
+  will-change: transform, filter;
 }
 
 @keyframes syaz-heart-beat {
-  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px rgba(255, 107, 203, 0.5)); }
-  50% { transform: scale(1.2); filter: drop-shadow(0 0 10px rgba(255, 107, 203, 0.95)); }
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 6px rgba(255, 107, 203, 0.7)); }
+  25% { transform: scale(1.35); filter: drop-shadow(0 0 16px rgba(255, 50, 150, 1)); }
+  50% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(255, 107, 203, 0.8)); }
+  75% { transform: scale(1.25); filter: drop-shadow(0 0 14px rgba(255, 107, 203, 1)); }
 }
 
 .syaz-chip-name {
@@ -633,13 +650,13 @@ body.fx-panel-glow .comments-panel {
   text-underline-offset: 4px;
   cursor: pointer;
   text-align: center;
-  transition: color 0.2s, text-shadow 0.2s;
-  animation: promo-cta-pulse 2.4s ease-in-out infinite;
+  animation: promo-cta-pulse 1.8s ease-in-out infinite !important;
+  will-change: text-shadow, opacity;
 }
 
 @keyframes promo-cta-pulse {
-  0%, 100% { text-shadow: 0 0 6px rgba(224, 102, 255, 0.25); opacity: 0.92; }
-  50% { text-shadow: 0 0 16px rgba(224, 102, 255, 0.75), 0 0 28px rgba(181, 123, 255, 0.35); opacity: 1; }
+  0%, 100% { text-shadow: 0 0 8px rgba(224, 102, 255, 0.5); opacity: 0.9; }
+  50% { text-shadow: 0 0 24px rgba(224, 102, 255, 1), 0 0 40px rgba(181, 123, 255, 0.6); opacity: 1; color: #fff; }
 }
 
 .promo-cta-link:hover {
@@ -717,17 +734,18 @@ body.fx-panel-glow .comments-panel {
 /* ── Syaz tribute (owner toggle) ── */
 .badge-syaz {
   background: linear-gradient(135deg, #ff6bcb, #e066ff) !important;
-  animation: syaz-badge-pulse 1.4s ease infinite;
+  animation: syaz-badge-pulse 1.1s ease-in-out infinite !important;
   overflow: hidden;
   border-radius: 5px;
   filter: none;
   font-size: 0.95rem;
   color: #fff;
+  will-change: transform, box-shadow;
 }
 
 @keyframes syaz-badge-pulse {
-  0%, 100% { box-shadow: 0 0 10px rgba(255, 107, 203, 0.6); transform: scale(1); }
-  50% { box-shadow: 0 0 22px rgba(255, 107, 203, 0.9); transform: scale(1.12); }
+  0%, 100% { box-shadow: 0 0 12px rgba(255, 107, 203, 0.75); transform: scale(1); }
+  50% { box-shadow: 0 0 28px rgba(255, 107, 203, 1), 0 0 44px rgba(224, 102, 255, 0.5); transform: scale(1.18); }
 }
 
 .badge-syaz .badge-pfp,
@@ -833,7 +851,20 @@ body.fx-panel-glow .comments-panel {
   border-radius: var(--radius);
   padding: 18px;
   margin-bottom: 14px;
-  transition: all 0.2s;
+  transition: transform 0.2s;
+  animation: promo-card-pulse 2s ease-in-out infinite !important;
+  will-change: box-shadow, border-color;
+}
+
+@keyframes promo-card-pulse {
+  0%, 100% {
+    box-shadow: 0 0 14px rgba(181, 123, 255, 0.2);
+    border-color: rgba(181, 123, 255, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 32px rgba(224, 102, 255, 0.55), 0 0 48px rgba(181, 123, 255, 0.25);
+    border-color: rgba(224, 102, 255, 0.65);
+  }
 }
 
 .promo-logo-box {
