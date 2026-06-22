@@ -1,9 +1,12 @@
-# Cloudflare Pages
-/index.html
+# Cloudflare Pages — keep HTML/JS/CSS fresh
+/*
   Cache-Control: no-cache, must-revalidate
 
-/js/*
-  Cache-Control: no-cache, must-revalidate
+/index.html
+  Cache-Control: no-store, must-revalidate
+
+/*.html
+  Cache-Control: no-store, must-revalidate
 
 /js/*
   Cache-Control: no-cache, must-revalidate
