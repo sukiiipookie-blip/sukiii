@@ -600,6 +600,86 @@
   margin-top: 4px;
 }
 
+.admin-owner-tag {
+  display: inline-block;
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 8px;
+  margin-left: 6px;
+  border-radius: var(--radius-pill);
+  color: var(--accent-secondary);
+  background: rgba(255, 142, 83, 0.15);
+  border: 1px solid rgba(255, 142, 83, 0.35);
+  vertical-align: middle;
+}
+
+.avatar-size-note {
+  margin-bottom: 8px;
+  color: var(--accent-secondary);
+}
+
+.avatar-admin-preview {
+  display: block;
+  width: 80px;
+  height: 80px;
+  margin-top: 12px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--glass-border);
+  box-shadow: 0 0 16px var(--accent-glow);
+}
+
+.avatar-admin-preview.hidden {
+  display: none;
+}
+
+/* ── Image crop modal ── */
+.crop-modal-content {
+  width: min(360px, 92vw);
+}
+
+.crop-stage {
+  position: relative;
+  width: 280px;
+  height: 280px;
+  margin: 0 auto 12px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 2px solid var(--glass-border);
+  box-shadow: 0 0 24px var(--accent-glow);
+}
+
+.crop-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.crop-mask {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: 50%;
+  box-shadow: 0 0 0 9999px rgba(8, 6, 15, 0.55);
+}
+
+.crop-note {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+.crop-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.crop-actions .admin-btn {
+  flex: 1;
+}
+
 @media (max-width: 768px) {
   #admin-panel { width: 100vw; }
   .form-row { grid-template-columns: 1fr; }

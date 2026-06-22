@@ -57,6 +57,11 @@ CREATE TABLE IF NOT EXISTS comments (
 
 INSERT INTO site_config (id, config) VALUES (1, '{}'::jsonb) ON CONFLICT (id) DO NOTHING;
 
+CREATE TABLE IF NOT EXISTS unique_visitors (
+  visitor_id TEXT PRIMARY KEY,
+  first_visit TIMESTAMPTZ DEFAULT now()
+);
+
 -- ═══════════════════════════════════════════
 -- 2. HELPER FUNCTIONS (after tables exist)
 -- ═══════════════════════════════════════════
@@ -71,6 +76,21 @@ RETURNS BOOLEAN
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
 AS $$ SELECT EXISTS (SELECT 1 FROM site_users WHERE user_id = auth.uid()) $$;
 
+CREATE OR REPLACE FUNCTION public.register_visitor(vid TEXT)
+RETURNS VOID
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO unique_visitors (visitor_id) VALUES (vid)
+  ON CONFLICT (visitor_id) DO NOTHING;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_visitor_count()
+RETURNS BIGINT
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$ SELECT COUNT(*)::BIGINT FROM unique_visitors $$;
+
 -- ═══════════════════════════════════════════
 -- 3. ROW LEVEL SECURITY
 -- ═══════════════════════════════════════════
@@ -79,6 +99,7 @@ ALTER TABLE site_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_invites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE site_config ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE unique_visitors ENABLE ROW LEVEL SECURITY;
 
 -- site_users
 DROP POLICY IF EXISTS "Users read own" ON site_users;
@@ -161,6 +182,13 @@ DROP POLICY IF EXISTS "Owner can style comments" ON comments;
 CREATE POLICY "Owner can style comments" ON comments FOR UPDATE TO authenticated
   USING (is_owner());
 
+-- unique_visitors (anon key can register + read count via RPC; direct table locked down)
+DROP POLICY IF EXISTS "No direct visitor reads" ON unique_visitors;
+CREATE POLICY "No direct visitor reads" ON unique_visitors FOR SELECT USING (false);
+
+DROP POLICY IF EXISTS "No direct visitor writes" ON unique_visitors;
+CREATE POLICY "No direct visitor writes" ON unique_visitors FOR INSERT WITH CHECK (false);
+
 -- ═══════════════════════════════════════════
 -- 4. TRIGGERS (auto-add invited admins)
 -- ═══════════════════════════════════════════
@@ -195,3 +223,7 @@ CREATE TRIGGER on_auth_user_invited
 -- Dashboard → Database → Replication → toggle ON for "comments"
 -- Or uncomment the line below:
 -- ALTER PUBLICATION supabase_realtime ADD TABLE comments;
+
+-- Allow anon visitors to register & read count via RPC only
+GRANT EXECUTE ON FUNCTION public.register_visitor(TEXT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.get_visitor_count() TO anon, authenticated;

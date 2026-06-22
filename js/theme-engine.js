@@ -1,11 +1,11 @@
-import { THEME_PRESETS } from './defaults.js';
+import { THEME_PRESETS, ALL_THEME_PRESETS } from './defaults.js';
 import { loadGoogleFont } from './utils.js';
 
 export function applyTheme(config) {
   const root = document.documentElement;
   const { theme, typography } = config;
 
-  const preset = THEME_PRESETS[theme.preset] || THEME_PRESETS.lavenderDream;
+  const preset = ALL_THEME_PRESETS[theme.preset] || THEME_PRESETS.lavenderNeon;
   Object.entries(preset.vars).forEach(([k, v]) => root.style.setProperty(k, v));
 
   Object.entries(theme.custom || {}).forEach(([k, v]) => {
@@ -18,7 +18,7 @@ export function applyTheme(config) {
   loadGoogleFont(typography.displayFont);
   loadGoogleFont(typography.bodyFont);
 
-  root.style.setProperty('--font-display', `'${typography.displayFont}', Georgia, serif`);
+  root.style.setProperty('--font-display', `'${typography.displayFont}', system-ui, sans-serif`);
   root.style.setProperty('--font-body', `'${typography.bodyFont}', system-ui, sans-serif`);
   root.style.setProperty('--font-size-base', `${typography.baseSize}px`);
   root.style.setProperty('--heading-weight', typography.headingWeight);

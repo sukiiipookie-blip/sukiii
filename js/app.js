@@ -1,18 +1,22 @@
 import {
-  initSupabase, loadConfigFromSupabase, loadConfigFromLocal, subscribe, getConfig,
+  initSupabase, loadConfigFromSupabase, loadConfigFromLocal, subscribe, getConfig, replaceConfig,
 } from './state.js';
+import { createDefaultConfig, normalizeSiteConfig } from './defaults.js';
 import { applyTheme } from './theme-engine.js';
 import { initBackgrounds, applyBackground } from './backgrounds.js';
 import { renderSite } from './renderer.js';
-import { initMusicPlayer } from './music-player.js';
+import { initMusicPlayer, updateMusicPlayerTheme } from './music-player.js';
 import { initCursor } from './cursor.js';
 import { initAuth, setAdminReadyCallback, openAdminPanel, showAuthGate, getIsAdmin } from './auth.js';
 import { initAdmin, openAdminUI } from './admin.js';
+import { initVisitors } from './visitors.js';
 import { ADMIN_LOGO_CLICKS, ADMIN_HASH, REGISTER_HASH } from './config.js';
-import { $ } from './utils.js';
+import { $, debounce } from './utils.js';
 
 let logoClicks = 0;
 let logoClickTimer = null;
+let lastMusicKey = '';
+let lastCursor = '';
 
 async function bootstrap() {
   initBackgrounds();
@@ -23,36 +27,52 @@ async function bootstrap() {
   const fromRemote = await loadConfigFromSupabase();
   if (!fromRemote) loadConfigFromLocal();
 
-  const config = getConfig();
-  applyAll(config);
+  const config = normalizeSiteConfig(getConfig());
+  replaceConfig(config);
+  applyAll(config, true);
 
-  const loader = $('#skeleton-loader');
-  if (loader) loader.classList.add('loaded');
+  $('#skeleton-loader')?.classList.add('loaded');
 
-  subscribe(applyAll);
+  initVisitors();
 
-  initAdmin(applyAll);
+  subscribe(debounce((c) => applyAll(normalizeSiteConfig(c)), 120));
+
+  initAdmin((c) => applyAll(normalizeSiteConfig(c), false));
 
   setAdminReadyCallback(() => {
-    openAdminUI(applyAll);
+    openAdminUI((c) => applyAll(normalizeSiteConfig(c), false));
     openAdminPanel();
   });
 
   setupAdminAccess();
 }
 
-function applyAll(config) {
+function applyAll(config, full = false) {
   applyTheme(config);
   applyBackground(config);
   renderSite(config);
-  initMusicPlayer(config);
-  initCursor(config);
+
+  const musicKey = JSON.stringify(config.music) + config.site?.showMusicPlayer;
+  if (full || musicKey !== lastMusicKey) {
+    initMusicPlayer(config);
+    lastMusicKey = musicKey;
+  } else {
+    updateMusicPlayerTheme();
+  }
+
+  const cur = config.site?.cursor || 'default';
+  if (full || cur !== lastCursor) {
+    initCursor(config);
+    lastCursor = cur;
+  }
+
   rebindLogo();
 }
 
 function rebindLogo() {
   const logo = $('#nav-logo');
-  if (!logo || logo.dataset.bound) return;
+  if (!logo) return;
+  if (logo.dataset.bound) return;
   logo.dataset.bound = '1';
   logo.addEventListener('click', onLogoClick);
 }
@@ -65,7 +85,7 @@ function onLogoClick() {
   if (logoClicks >= ADMIN_LOGO_CLICKS) {
     logoClicks = 0;
     if (getIsAdmin()) {
-      openAdminUI(applyAll);
+      openAdminUI((c) => applyAll(normalizeSiteConfig(c), false));
       openAdminPanel();
     } else {
       showAuthGate();

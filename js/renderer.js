@@ -2,6 +2,7 @@ import { SOCIAL_PLATFORMS, detectPlatform } from './defaults.js';
 import { escapeHtml, $ } from './utils.js';
 import { headingClass } from './theme-engine.js';
 import { loadComments, renderCommentsUI, subscribeComments, refreshCommentsList } from './comments.js';
+import { renderVisitorPillHtml, updateVisitorPill, getVisitorCount } from './visitors.js';
 
 let activeTabId = null;
 let commentsMounted = false;
@@ -41,7 +42,7 @@ function renderNav(config) {
 
   nav.innerHTML = `
     <div class="nav-logo" id="nav-logo" title="✨">
-      <div class="nav-logo-icon">✨</div>
+      <div class="nav-logo-icon">♡</div>
       <span class="nav-logo-text">${escapeHtml(config.profile?.displayName?.split(' ')[0] || 'Hub')}</span>
     </div>
     <button class="nav-mobile-toggle" id="nav-toggle" aria-label="Menu">☰</button>
@@ -89,6 +90,8 @@ function renderProfile(config) {
     }).join('');
 
   const bannerStyle = p.banner ? `background-image:url(${p.banner})` : '';
+  const showVisitors = config.site?.showVisitorPill !== false;
+  const visitorHtml = showVisitors ? renderVisitorPillHtml() : '';
 
   hero.innerHTML = `
     <div class="profile-card glass-card">
@@ -102,6 +105,7 @@ function renderProfile(config) {
           ${p.nickname ? `<div class="profile-nickname">${escapeHtml(p.nickname)}</div>` : ''}
           <div class="profile-username">${escapeHtml(p.username)}</div>
           <div class="profile-tagline">${escapeHtml(p.tagline)}</div>
+          ${visitorHtml}
           <p class="profile-bio">${escapeHtml(p.bio)}</p>
           <div class="role-pills">${badgesHtml}</div>
           <div class="social-row">${socialHtml}</div>
@@ -109,6 +113,8 @@ function renderProfile(config) {
       </div>
     </div>
   `;
+
+  if (showVisitors) updateVisitorPill(getVisitorCount());
 }
 
 function renderTabContent(config) {
@@ -278,24 +284,12 @@ function renderEnterScreen(config) {
   }
 
   screen.innerHTML = `
-    <div class="enter-sparkles" id="enter-sparkles"></div>
     <div class="enter-content">
+      <div class="enter-glow"></div>
       <div class="enter-title">${escapeHtml(config.site.enterTitle || 'Welcome')}</div>
-      <div class="enter-sub">${escapeHtml(config.site.enterSubtitle || '')}</div>
+      <div class="enter-sub">${escapeHtml(config.site.enterSubtitle || 'click to enter')}</div>
     </div>
   `;
-
-  const sparkles = $('#enter-sparkles');
-  if (sparkles) {
-    for (let i = 0; i < 30; i++) {
-      const s = document.createElement('div');
-      s.className = 'ambient-sparkle';
-      s.style.left = `${Math.random() * 100}%`;
-      s.style.top = `${Math.random() * 100}%`;
-      s.style.animationDelay = `${Math.random() * 3}s`;
-      sparkles.appendChild(s);
-    }
-  }
 
   screen.onclick = () => screen.classList.add('dismissed');
 }

@@ -159,6 +159,14 @@ function defaultCover() {
   `)}`;
 }
 
+export function updateMusicPlayerTheme() {
+  const player = $('#music-player');
+  if (player) {
+    player.style.borderColor = 'var(--glass-border)';
+    player.style.boxShadow = 'var(--shadow-soft), 0 0 20px var(--accent-glow)';
+  }
+}
+
 export function destroyMusicPlayer() {
   stopVisualizer();
   if (audio) {

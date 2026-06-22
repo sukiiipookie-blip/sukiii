@@ -1,5 +1,5 @@
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
-import { createDefaultConfig, deepClone } from './defaults.js';
+import { createDefaultConfig, deepClone, normalizeSiteConfig } from './defaults.js';
 import { mergeDeep } from './utils.js';
 
 let supabase = null;
@@ -73,7 +73,7 @@ export async function loadConfigFromSupabase() {
   }
   if (data?.config) {
     const defaults = createDefaultConfig();
-    config = mergeDeep(defaults, data.config);
+    config = normalizeSiteConfig(mergeDeep(defaults, data.config));
     lastSaved = deepClone(config);
     notify();
     return config;
@@ -102,7 +102,7 @@ export function loadConfigFromLocal() {
     if (raw) {
       const parsed = JSON.parse(raw);
       const defaults = createDefaultConfig();
-      config = mergeDeep(defaults, parsed);
+      config = normalizeSiteConfig(mergeDeep(defaults, parsed));
       lastSaved = deepClone(config);
       notify();
       return config;

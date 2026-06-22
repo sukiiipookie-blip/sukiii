@@ -1,59 +1,54 @@
 :root {
   color-scheme: dark;
 
-  /* Lavender Dream — default preset */
-  --bg-primary: #0c0818;
-  --bg-secondary: #14102a;
-  --bg-elevated: rgba(22, 16, 42, 0.72);
-  --glass-bg: rgba(28, 20, 52, 0.55);
-  --glass-border: rgba(196, 160, 255, 0.22);
-  --glass-blur: 18px;
+  --bg-primary: #08060f;
+  --bg-secondary: #0f0a1a;
+  --bg-elevated: rgba(18, 12, 32, 0.88);
+  --glass-bg: rgba(14, 10, 28, 0.82);
+  --glass-border: rgba(181, 123, 255, 0.35);
+  --glass-blur: 10px;
 
-  --accent-primary: #c4a0ff;
-  --accent-secondary: #e8b4f8;
-  --accent-rose: #f0a8d0;
-  --accent-rose-gold: #d4a88c;
-  --accent-glow: rgba(196, 160, 255, 0.45);
-  --accent-glow-strong: rgba(232, 180, 248, 0.65);
+  --accent-primary: #b57bff;
+  --accent-secondary: #d4a5ff;
+  --accent-rose: #e066ff;
+  --accent-rose-gold: #c9a0ff;
+  --accent-glow: rgba(181, 123, 255, 0.5);
+  --accent-glow-strong: rgba(224, 102, 255, 0.65);
 
-  --text-primary: #f5eeff;
-  --text-secondary: rgba(245, 238, 255, 0.72);
-  --text-muted: rgba(245, 238, 255, 0.5);
+  --text-primary: #f4f0ff;
+  --text-secondary: rgba(244, 240, 255, 0.72);
+  --text-muted: rgba(244, 240, 255, 0.48);
 
-  --gradient-heading: linear-gradient(135deg, #e8b4f8 0%, #c4a0ff 45%, #f0a8d0 100%);
-  --gradient-accent: linear-gradient(135deg, #9b7bdb 0%, #c4a0ff 50%, #e8b4f8 100%);
+  --gradient-heading: linear-gradient(90deg, #d4a5ff, #b57bff, #e066ff);
+  --gradient-accent: linear-gradient(135deg, #7c5cff, #b57bff, #e066ff);
 
-  --font-display: 'Playfair Display', Georgia, serif;
-  --font-body: 'Quicksand', system-ui, sans-serif;
+  --font-display: 'Outfit', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
   --font-size-base: 16px;
   --font-size-sm: 0.875rem;
   --font-size-lg: 1.125rem;
-  --font-size-xl: 1.5rem;
-  --font-size-2xl: 2rem;
-  --font-size-3xl: 2.75rem;
-  --letter-spacing: 0.02em;
-  --line-height: 1.65;
+  --font-size-xl: 1.4rem;
+  --font-size-2xl: 1.85rem;
+  --font-size-3xl: 2.4rem;
+  --letter-spacing: 0.01em;
+  --line-height: 1.6;
   --heading-weight: 600;
   --body-weight: 400;
   --heading-effect: gradient;
 
-  --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 24px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
   --radius-pill: 999px;
 
-  --shadow-soft: 0 8px 32px rgba(0, 0, 0, 0.35);
-  --shadow-glow: 0 0 40px var(--accent-glow);
+  --shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 32px var(--accent-glow);
   --glow-intensity: 1;
 
-  --nav-height: 64px;
-  --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-smooth: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --nav-height: 58px;
+  --transition-fast: 0.18s ease;
+  --transition-smooth: 0.3s ease;
 
-  --overlay-frost: 0;
-  --overlay-particles: 0;
-  --particle-density: 1;
-
-  --card-hover-scale: 1.02;
+  --card-hover-scale: 1.015;
   --page-transition: fade;
 }

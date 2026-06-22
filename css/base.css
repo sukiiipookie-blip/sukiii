@@ -181,6 +181,73 @@ input, textarea, select {
   height: 8px;
 }
 
+body.custom-cursor-active,
+body.custom-cursor-active a,
+body.custom-cursor-active button {
+  cursor: none !important;
+}
+
+.cursor-neon-ring {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 32px;
+  height: 32px;
+  border: 1.5px solid var(--accent-primary);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 99999;
+  box-shadow: 0 0 12px var(--accent-glow), inset 0 0 8px rgba(181, 123, 255, 0.15);
+  will-change: transform;
+  transition: width 0.15s, height 0.15s, border-color 0.15s;
+}
+
+body.cursor-clicking .cursor-neon-ring {
+  width: 24px;
+  height: 24px;
+  border-color: var(--accent-rose);
+}
+
+.cursor-neon-dot {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  background: var(--accent-secondary);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 100000;
+  box-shadow: 0 0 10px var(--accent-glow-strong);
+  will-change: transform;
+}
+
+.cursor-custom {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 28px;
+  height: 28px;
+  pointer-events: none;
+  z-index: 99999;
+  background-size: contain;
+  background-repeat: no-repeat;
+  will-change: transform;
+}
+
+@media (hover: none), (pointer: coarse) {
+  body.custom-cursor-active,
+  body.custom-cursor-active a,
+  body.custom-cursor-active button {
+    cursor: auto !important;
+  }
+  .cursor-neon-ring,
+  .cursor-neon-dot,
+  .cursor-custom {
+    display: none !important;
+  }
+}
+
 #toast-container {
   position: fixed;
   bottom: 24px;

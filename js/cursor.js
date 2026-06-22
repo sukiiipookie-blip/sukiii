@@ -1,79 +1,72 @@
 let cursorType = 'default';
 let customUrl = '';
+let rafId = null;
+let mouseX = 0;
+let mouseY = 0;
+let ringX = 0;
+let ringY = 0;
+let dotEl = null;
+let ringEl = null;
+let customEl = null;
 let moveHandler = null;
 
 export function initCursor(config) {
+  const raw = config.site?.cursor || 'default';
+  const next = ['neon', 'dot', 'sparkle', 'petal'].includes(raw) ? 'neon' : raw;
+  if (next === cursorType && next !== 'custom') {
+    if (next === 'default') return;
+    return;
+  }
+
   destroyCursor();
-  cursorType = config.site?.cursor || 'default';
+  cursorType = next;
   customUrl = config.site?.cursorCustomUrl || '';
 
   if (cursorType === 'default') return;
 
-  document.body.style.cursor = 'none';
+  document.body.classList.add('custom-cursor-active');
+
+  if (cursorType === 'custom' && customUrl) {
+    customEl = document.createElement('div');
+    customEl.className = 'cursor-custom';
+    customEl.style.backgroundImage = `url(${customUrl})`;
+    document.body.appendChild(customEl);
+  } else {
+    ringEl = document.createElement('div');
+    ringEl.className = 'cursor-neon-ring';
+    dotEl = document.createElement('div');
+    dotEl.className = 'cursor-neon-dot';
+    document.body.appendChild(ringEl);
+    document.body.appendChild(dotEl);
+    tick();
+  }
 
   moveHandler = (e) => {
-    if (cursorType === 'sparkle') spawnSparkle(e.clientX, e.clientY);
-    if (cursorType === 'petal') spawnPetal(e.clientX, e.clientY);
-    if (cursorType === 'dot') moveDot(e.clientX, e.clientY);
-    if (cursorType === 'custom' && customUrl) moveCustom(e.clientX, e.clientY);
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    if (customEl) {
+      customEl.style.transform = `translate(${mouseX}px, ${mouseY}px) translate(-50%, -50%)`;
+    }
   };
 
-  document.addEventListener('mousemove', moveHandler);
+  document.addEventListener('mousemove', moveHandler, { passive: true });
 
-  if (cursorType === 'dot') createDot();
-  if (cursorType === 'custom' && customUrl) createCustomCursor();
+  document.addEventListener('mousedown', () => document.body.classList.add('cursor-clicking'));
+  document.addEventListener('mouseup', () => document.body.classList.remove('cursor-clicking'));
 }
 
-function spawnSparkle(x, y) {
-  if (Math.random() > 0.7) return;
-  const el = document.createElement('div');
-  el.className = 'cursor-sparkle';
-  el.textContent = '✦';
-  el.style.left = `${x + (Math.random() - 0.5) * 20}px`;
-  el.style.top = `${y + (Math.random() - 0.5) * 20}px`;
-  el.style.color = `hsl(${270 + Math.random() * 40}, 80%, 80%)`;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 600);
-}
+function tick() {
+  ringX += (mouseX - ringX) * 0.18;
+  ringY += (mouseY - ringY) * 0.18;
 
-function spawnPetal(x, y) {
-  if (Math.random() > 0.85) return;
-  const el = document.createElement('div');
-  el.className = 'cursor-petal';
-  el.textContent = '🌸';
-  el.style.left = `${x}px`;
-  el.style.top = `${y}px`;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 2000);
-}
-
-let dotEl = null;
-function createDot() {
-  dotEl = document.createElement('div');
-  dotEl.className = 'cursor-dot';
-  document.body.appendChild(dotEl);
-}
-
-function moveDot(x, y) {
+  if (ringEl) {
+    ringEl.style.transform = `translate(${ringX}px, ${ringY}px) translate(-50%, -50%)`;
+  }
   if (dotEl) {
-    dotEl.style.left = `${x}px`;
-    dotEl.style.top = `${y}px`;
+    dotEl.style.transform = `translate(${mouseX}px, ${mouseY}px) translate(-50%, -50%)`;
   }
-}
 
-let customEl = null;
-function createCustomCursor() {
-  customEl = document.createElement('div');
-  customEl.className = 'cursor-custom';
-  customEl.style.backgroundImage = `url(${customUrl})`;
-  document.body.appendChild(customEl);
-}
-
-function moveCustom(x, y) {
-  if (customEl) {
-    customEl.style.left = `${x}px`;
-    customEl.style.top = `${y}px`;
-  }
+  rafId = requestAnimationFrame(tick);
 }
 
 export function destroyCursor() {
@@ -81,9 +74,14 @@ export function destroyCursor() {
     document.removeEventListener('mousemove', moveHandler);
     moveHandler = null;
   }
-  document.body.style.cursor = '';
+  if (rafId) {
+    cancelAnimationFrame(rafId);
+    rafId = null;
+  }
+  document.body.classList.remove('custom-cursor-active', 'cursor-clicking');
   dotEl?.remove();
+  ringEl?.remove();
   customEl?.remove();
-  dotEl = null;
-  customEl = null;
+  dotEl = ringEl = customEl = null;
+  cursorType = 'default';
 }

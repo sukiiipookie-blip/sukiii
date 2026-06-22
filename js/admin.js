@@ -1,9 +1,10 @@
 import {
   getConfig, setConfig, saveConfigToSupabase, revertToLastSaved, uploadFile, subscribe,
 } from './state.js';
-import { THEME_PRESETS, BG_ANIMATIONS, SOCIAL_PLATFORMS, detectPlatform, createDefaultConfig } from './defaults.js';
+import { THEME_PRESETS, SUNSET_THEME_PRESETS, NEON_THEME_KEYS, SUNSET_THEME_KEYS, BG_ANIMATIONS, SOCIAL_PLATFORMS, detectPlatform, createDefaultConfig } from './defaults.js';
 import { uid, $, $$, showToast, debounce } from './utils.js';
-import { closeAdminPanel, signOut, getSiteUser } from './auth.js';
+import { closeAdminPanel, signOut, getSiteUser, isOwnerUser } from './auth.js';
+import { openImageCropModal, loadImageForCrop, AVATAR_SIZE_NOTE } from './image-crop.js';
 import { getVisibleSections, ADMIN_GROUPS } from './permissions.js';
 import {
   renderUsersSection, renderCommentsAdminSection,
@@ -164,23 +165,25 @@ function renderAdminSection(onApply) {
 }
 
 function renderThemeSection(c) {
-  const presets = Object.entries(THEME_PRESETS).map(([key, p]) => `
-    <div class="theme-preset ${c.theme.preset === key ? 'active' : ''}" data-preset="${key}">
-      <div class="theme-preset-swatch" style="background:${p.swatch}"></div>
-      <div class="theme-preset-name">${p.name}</div>
-    </div>
-  `).join('');
+  const neonGrid = renderPresetGrid(NEON_THEME_KEYS, THEME_PRESETS, c.theme.preset);
+  const sunsetGrid = isOwnerUser()
+    ? `<div class="admin-divider"></div>
+       <h3 style="margin-bottom:8px">🌅 Sunset Themes <span class="admin-owner-tag">Owner only</span></h3>
+       <p class="admin-hint" style="margin-bottom:12px">Warm golden & coral neon palettes — exclusive to you.</p>
+       <div class="theme-presets">${renderPresetGrid(SUNSET_THEME_KEYS, SUNSET_THEME_PRESETS, c.theme.preset)}</div>`
+    : '';
 
-  const overlays = ['frost', 'glow', 'particles'];
+  const overlays = ['frost', 'glow'];
   const overlayChips = overlays.map(o => `
     <button class="overlay-chip ${(c.theme.overlays || []).includes(o) ? 'active' : ''}" data-overlay="${o}">
-      ${o === 'frost' ? '❄️ Frosted Glass' : o === 'glow' ? '✨ Boost Glow' : '🌟 Particles'}
+      ${o === 'frost' ? '❄️ Frosted Glass' : '✨ Boost Glow'}
     </button>
   `).join('');
 
   return `
-    <h3 style="margin-bottom:16px">Theme Presets</h3>
-    <div class="theme-presets">${presets}</div>
+    <h3 style="margin-bottom:16px">Neon / Lavender Themes</h3>
+    <div class="theme-presets">${neonGrid}</div>
+    ${sunsetGrid}
     <div class="admin-divider"></div>
     <h3 style="margin-bottom:12px">Variation Overlays</h3>
     <div class="overlay-toggles">${overlayChips}</div>
@@ -191,14 +194,27 @@ function renderThemeSection(c) {
     <div class="admin-divider"></div>
     <h3 style="margin-bottom:12px">Custom Colors</h3>
     <div class="form-row">
-      <div class="form-group"><label>Accent Primary</label><input type="color" class="form-color" data-custom="--accent-primary" value="${hexFromVar(c.theme.custom?.['--accent-primary'] || '#c4a0ff')}" /></div>
-      <div class="form-group"><label>Accent Rose</label><input type="color" class="form-color" data-custom="--accent-rose" value="${hexFromVar(c.theme.custom?.['--accent-rose'] || '#f0a8d0')}" /></div>
+      <div class="form-group"><label>Accent Primary</label><input type="color" class="form-color" data-custom="--accent-primary" value="${hexFromVar(c.theme.custom?.['--accent-primary'] || '#b57bff')}" /></div>
+      <div class="form-group"><label>Accent Rose</label><input type="color" class="form-color" data-custom="--accent-rose" value="${hexFromVar(c.theme.custom?.['--accent-rose'] || '#e066ff')}" /></div>
     </div>
     <div class="form-row">
-      <div class="form-group"><label>Background</label><input type="color" class="form-color" data-custom="--bg-primary" value="${hexFromVar(c.theme.custom?.['--bg-primary'] || '#0c0818')}" /></div>
-      <div class="form-group"><label>Glass Border</label><input type="color" class="form-color" data-custom="--glass-border" value="${hexFromVar(c.theme.custom?.['--glass-border'] || '#c4a0ff')}" /></div>
+      <div class="form-group"><label>Background</label><input type="color" class="form-color" data-custom="--bg-primary" value="${hexFromVar(c.theme.custom?.['--bg-primary'] || '#08060f')}" /></div>
+      <div class="form-group"><label>Glass Border</label><input type="color" class="form-color" data-custom="--glass-border" value="${hexFromVar(c.theme.custom?.['--glass-border'] || '#b57bff')}" /></div>
     </div>
   `;
+}
+
+function renderPresetGrid(keys, presetMap, activeKey) {
+  return keys.map(key => {
+    const p = presetMap[key];
+    if (!p) return '';
+    return `
+      <div class="theme-preset ${activeKey === key ? 'active' : ''}" data-preset="${key}">
+        <div class="theme-preset-swatch" style="background:${p.swatch}"></div>
+        <div class="theme-preset-name">${p.name}</div>
+      </div>
+    `;
+  }).join('');
 }
 
 function renderBackgroundSection(c) {
@@ -248,7 +264,16 @@ function renderProfileSection(c) {
     </div>
     <div class="form-group"><label>Tagline</label><input class="form-input" id="prof-tag" value="${esc(p.tagline)}" /></div>
     <div class="form-group"><label>Bio</label><textarea class="form-textarea" id="prof-bio">${esc(p.bio)}</textarea></div>
-    <div class="form-group"><label>Avatar URL</label><input class="form-input" id="prof-avatar" value="${esc(p.avatar)}" /><input type="file" accept="image/*" id="prof-avatar-upload" class="form-input" style="margin-top:8px" /></div>
+    <div class="form-group avatar-upload-group">
+      <label>Profile Photo</label>
+      <p class="admin-hint avatar-size-note">💜 ${AVATAR_SIZE_NOTE}</p>
+      <input class="form-input" id="prof-avatar" value="${esc(p.avatar)}" placeholder="Paste image URL or upload below" />
+      <div class="form-row" style="margin-top:8px">
+        <input type="file" accept="image/*" id="prof-avatar-upload" class="form-input" />
+        <button type="button" class="admin-btn admin-btn-secondary admin-btn-sm" id="prof-avatar-crop">Crop URL / Preview</button>
+      </div>
+      ${p.avatar ? `<img src="${esc(p.avatar)}" class="avatar-admin-preview" id="avatar-preview" alt="" />` : '<img class="avatar-admin-preview hidden" id="avatar-preview" alt="" />'}
+    </div>
     <div class="form-group"><label>Banner URL</label><input class="form-input" id="prof-banner" value="${esc(p.banner)}" /><input type="file" accept="image/*" id="prof-banner-upload" class="form-input" style="margin-top:8px" /></div>
     <div class="form-row">
       <div class="form-group"><label>Avatar Border</label>
@@ -410,7 +435,7 @@ function renderSiteSection(c) {
     <div class="admin-divider"></div>
     <div class="form-row">
       <div class="form-group"><label>Cursor Style</label>
-        <select class="form-select" id="cursor-style"><option value="default" ${s.cursor==='default'?'selected':''}>Default</option><option value="sparkle" ${s.cursor==='sparkle'?'selected':''}>Sparkle Trail</option><option value="petal" ${s.cursor==='petal'?'selected':''}>Petal Trail</option><option value="dot" ${s.cursor==='dot'?'selected':''}>Glowing Dot</option><option value="custom" ${s.cursor==='custom'?'selected':''}>Custom Upload</option></select>
+        <select class="form-select" id="cursor-style"><option value="default" ${s.cursor==='default'?'selected':''}>System Default</option><option value="neon" ${s.cursor==='neon'||s.cursor==='dot'||s.cursor==='sparkle'?'selected':''}>Neon Dot</option><option value="custom" ${s.cursor==='custom'?'selected':''}>Custom Image</option></select>
       </div>
       <div class="form-group"><label>Page Transition</label>
         <select class="form-select" id="page-transition"><option value="fade" ${s.pageTransition==='fade'?'selected':''}>Fade</option><option value="slide" ${s.pageTransition==='slide'?'selected':''}>Slide Up</option><option value="scale" ${s.pageTransition==='scale'?'selected':''}>Scale</option></select>
@@ -420,6 +445,7 @@ function renderSiteSection(c) {
       <select class="form-select" id="card-hover"><option value="lift" ${s.cardHover==='lift'?'selected':''}>Lift</option><option value="glow" ${s.cardHover==='glow'?'selected':''}>Glow</option><option value="tilt" ${s.cardHover==='tilt'?'selected':''}>Tilt</option></select>
     </div>
     <label class="form-checkbox"><input type="checkbox" id="show-music" ${s.showMusicPlayer?'checked':''} /> Show music player</label>
+    <label class="form-checkbox"><input type="checkbox" id="show-visitors" ${s.showVisitorPill !== false ? 'checked' : ''} /> Show unique visitor pill</label>
     <div class="admin-divider"></div>
     <label class="form-checkbox"><input type="checkbox" id="maintenance" ${s.maintenanceMode?'checked':''} /> Maintenance mode</label>
     <div class="form-group"><label>Maintenance Message</label><textarea class="form-textarea" id="maintenance-msg">${esc(s.maintenanceMessage)}</textarea></div>
@@ -438,7 +464,12 @@ function bindSectionEvents(onApply) {
 
   $$('.theme-preset').forEach(el => {
     el.addEventListener('click', () => {
-      draftConfig.theme.preset = el.dataset.preset;
+      const key = el.dataset.preset;
+      if (SUNSET_THEME_KEYS.includes(key) && !isOwnerUser()) {
+        showToast('Sunset themes are owner-only', 'error');
+        return;
+      }
+      draftConfig.theme.preset = key;
       renderAdminSection(onApply);
       apply();
     });
@@ -496,6 +527,7 @@ function bindSectionEvents(onApply) {
   bindSiteInputs(apply);
   bindMusicInputs(apply);
   bindListActions(onApply, apply);
+  bindProfileCrop(onApply, apply);
   bindFileUploads(onApply, apply);
   bindDragReorder(onApply, apply);
 }
@@ -572,6 +604,7 @@ function bindSiteInputs(apply) {
   const checks = {
     '#enter-screen': 'site.enterScreen',
     '#show-music': 'site.showMusicPlayer',
+    '#show-visitors': 'site.showVisitorPill',
     '#maintenance': 'site.maintenanceMode',
   };
   Object.entries(checks).forEach(([sel, path]) => {
@@ -609,9 +642,51 @@ function bindListActions(onApply, apply) {
   $$('.del-track').forEach(b => b.addEventListener('click', () => { draftConfig.music.tracks.splice(+b.dataset.idx, 1); renderAdminSection(onApply); apply(); }));
 }
 
+function bindProfileCrop(onApply, apply) {
+  $('#prof-avatar-crop')?.addEventListener('click', async () => {
+    const url = $('#prof-avatar')?.value?.trim();
+    if (!url) return showToast('Paste a URL or upload a file first', 'error');
+    try {
+      const src = await loadImageForCrop(url);
+      openImageCropModal(src, {
+        onComplete: async (blob) => {
+          try {
+            const uploaded = await uploadFile('avatars', `avatar-${Date.now()}.jpg`, blob);
+            draftConfig.profile.avatar = uploaded;
+            $('#prof-avatar').value = uploaded;
+            const prev = $('#avatar-preview');
+            if (prev) { prev.src = uploaded; prev.classList.remove('hidden'); }
+            apply();
+            showToast('Profile photo cropped & saved!');
+          } catch (e) { showToast(e.message, 'error'); }
+        },
+      });
+    } catch (e) { showToast(e.message, 'error'); }
+  });
+
+  $('#prof-avatar-upload')?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const src = await loadImageForCrop(file);
+    openImageCropModal(src, {
+      onComplete: async (blob) => {
+        try {
+          const uploaded = await uploadFile('avatars', `avatar-${Date.now()}.jpg`, blob);
+          draftConfig.profile.avatar = uploaded;
+          $('#prof-avatar').value = uploaded;
+          const prev = $('#avatar-preview');
+          if (prev) { prev.src = uploaded; prev.classList.remove('hidden'); }
+          apply();
+          showToast('Profile photo uploaded!');
+        } catch (err) { showToast(err.message, 'error'); }
+      },
+    });
+    e.target.value = '';
+  });
+}
+
 function bindFileUploads(onApply, apply) {
   const uploads = [
-    ['#prof-avatar-upload', 'profile.avatar', 'avatars'],
     ['#prof-banner-upload', 'profile.banner', 'banners'],
     ['#bg-image-upload', 'background.image', 'backgrounds'],
     ['#favicon-upload', 'site.favicon', 'assets'],
