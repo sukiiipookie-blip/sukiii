@@ -168,8 +168,7 @@ function renderNav(cfg) {
     });
   });
   $('#nav-admin')?.addEventListener('click', () => {
-    if (getIsAdmin()) window.location.href = 'admin.html';
-    else showAuthGate();
+    window.location.href = 'admin.html';
   });
 }
 

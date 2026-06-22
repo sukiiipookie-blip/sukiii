@@ -17,7 +17,6 @@ async function boot() {
 
     setAdminReadyCallback(() => {
       if (getIsAdmin()) startPanel();
-      else showAuthGate('login');
     });
 
     if (location.hash === `#${REGISTER_HASH}`) {
@@ -25,13 +24,12 @@ async function boot() {
       return;
     }
 
-    if (!getIsAdmin()) {
-      if (location.hash === `#${ADMIN_HASH}`) showAuthGate('login');
-      else showAuthGate('login');
+    if (getIsAdmin()) {
+      await startPanel();
       return;
     }
 
-    startPanel();
+    showAuthGate('login');
   } catch (err) {
     console.error('Admin boot failed:', err);
     document.body.innerHTML = `<p style="color:#f5f0ff;padding:40px;font-family:sans-serif">Failed to load panel: ${err.message}</p>`;

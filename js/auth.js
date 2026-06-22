@@ -33,6 +33,7 @@ export async function initAuth() {
   const supabase = getSupabase();
   if (!supabase) {
     siteUser = { role: 'owner', permissions: {} };
+    isAdmin = true;
     return;
   }
 
