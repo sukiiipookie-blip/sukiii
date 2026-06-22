@@ -176,9 +176,10 @@ function renderProfile(c) {
     <div class="form-group"><label>Info Lines</label><div class="info-lines">${lines}</div>
       <button type="button" class="admin-btn admin-btn-sm admin-btn-neon" id="add-info-line">+ Add line</button></div>
     <div class="form-row">
-      <div class="form-group"><label>Enter Screen Text</label><input class="form-input" id="enter-text" value="${esc(c.site.enterText)}" /></div>
-      <div class="form-group"><label>Footer Credit</label><input class="form-input" id="footer-credit" value="${esc(c.site.footerCredit)}" /></div>
-    </div>`;
+      <div class="form-group"><label>Enter main text</label><input class="form-input" id="enter-text" value="${esc(c.site.enterText)}" placeholder="click to unlock yourself" /></div>
+      <div class="form-group"><label>Enter hint (italic subtext)</label><input class="form-input" id="enter-hint" value="${esc(c.site.enterHint)}" placeholder="tap anywhere · you're clear to enter" /></div>
+    </div>
+    <div class="form-group"><label>Footer Credit</label><input class="form-input" id="footer-credit" value="${esc(c.site.footerCredit)}" /></div>`;
 }
 
 function renderBadges(c) {
@@ -304,6 +305,7 @@ function bindProfile() {
   $('#p-grad-from')?.addEventListener('input', e => { draft.profile.nameGradientFrom = e.target.value; });
   $('#p-grad-to')?.addEventListener('input', e => { draft.profile.nameGradientTo = e.target.value; });
   $('#enter-text')?.addEventListener('input', e => { draft.site.enterText = e.target.value; });
+  $('#enter-hint')?.addEventListener('input', e => { draft.site.enterHint = e.target.value; });
   $('#footer-credit')?.addEventListener('input', e => { draft.site.footerCredit = e.target.value; });
   $$('.info-line').forEach(inp => inp.addEventListener('input', e => {
     draft.profile.infoLines[+inp.dataset.idx] = e.target.value;

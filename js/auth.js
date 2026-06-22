@@ -36,7 +36,10 @@ export async function initAuth() {
     return;
   }
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const sessionPromise = supabase.auth.getSession();
+  const timeout = new Promise(resolve => setTimeout(() => resolve(null), 8000));
+  const result = await Promise.race([sessionPromise, timeout]);
+  const session = result?.data?.session;
   if (session?.user) await verifyAdmin(session.user);
 
   supabase.auth.onAuthStateChange(async (_event, session) => {

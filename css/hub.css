@@ -75,30 +75,46 @@ body {
   backdrop-filter: blur(24px) saturate(1.2);
   -webkit-backdrop-filter: blur(24px) saturate(1.2);
   background: rgba(88, 60, 140, 0.45);
+  pointer-events: none;
 }
 
 .enter-inner {
   position: relative;
+  z-index: 1;
   text-align: center;
   padding: 24px;
+  pointer-events: none;
 }
 
-.enter-typewriter {
-  font-family: var(--font-mono);
-  font-size: clamp(1.1rem, 3vw, 1.5rem);
-  color: #ede9fe;
-  text-shadow: 0 0 20px var(--accent-glow);
-  min-height: 1.5em;
-  letter-spacing: 0.04em;
+.enter-main,
+.enter-hint {
+  pointer-events: none;
+}
+
+.enter-main {
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 4vw, 2rem);
+  font-weight: 600;
+  background: var(--name-grad, linear-gradient(90deg, #ede9fe, #d4a5ff, #e066ff));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  filter: drop-shadow(0 0 20px rgba(181, 123, 255, 0.45));
+  min-height: 1.4em;
+  letter-spacing: 0.02em;
+  text-transform: lowercase;
 }
 
 .enter-hint {
-  margin-top: 20px;
-  font-size: 0.75rem;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.2em;
-  animation: hint-pulse 2s ease infinite;
+  margin-top: 18px;
+  font-size: 0.72rem;
+  font-style: italic;
+  font-weight: 400;
+  color: rgba(200, 180, 230, 0.75);
+  text-transform: none;
+  letter-spacing: 0.04em;
+  animation: hint-pulse 2.5s ease infinite;
 }
 
 @keyframes hint-pulse {

@@ -204,7 +204,8 @@ export function createDefaultConfig() {
   return {
     site: {
       title: 'Suki | Creator Hub',
-      enterText: 'click here to enter',
+      enterText: 'click to unlock yourself',
+      enterHint: 'tap anywhere · you\'re clear to enter',
       footerCredit: 'Suki',
     },
     theme: {
@@ -308,6 +309,8 @@ export function normalizeSiteConfig(config) {
   if (!config || typeof config !== 'object') return createDefaultConfig();
   const defaults = createDefaultConfig();
   if (!config.site) config.site = defaults.site;
+  else config.site = { ...defaults.site, ...config.site };
+  if (!config.site.enterHint) config.site.enterHint = defaults.site.enterHint;
   if (!config.theme) config.theme = defaults.theme;
   if (!config.profile) config.profile = defaults.profile;
   if (!config.badges?.length) config.badges = defaults.badges;

@@ -63,29 +63,64 @@ async function init() {
   }
 }
 
-/* ── Enter gate + typewriter ── */
-function setupEnterGate(cfg) {
-  const gate = $('#enter-gate');
-  const textEl = $('#enter-text');
-  if (!gate || !textEl) return;
+/* ── Enter gate — wire immediately so clicks always work ── */
+let enterGateWired = false;
+let typewriterTimer = null;
 
-  const text = cfg.site?.enterText || 'click here to enter';
+function wireEnterGate() {
+  const gate = $('#enter-gate');
+  if (!gate || enterGateWired) return;
+  enterGateWired = true;
+
+  gate.setAttribute('role', 'button');
+  gate.setAttribute('tabindex', '0');
+  gate.setAttribute('aria-label', 'Enter site');
+
+  gate.addEventListener('click', dismissEnterGate);
+  gate.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      dismissEnterGate();
+    }
+  });
+
+  updateEnterGateCopy(createDefaultConfig());
+}
+
+function dismissEnterGate() {
+  const gate = $('#enter-gate');
+  if (!gate || gate.classList.contains('dismissed')) return;
+  gate.classList.add('dismissed');
+  $('#app')?.classList.add('ready');
+  $('#app')?.classList.remove('app-hidden');
+  initMusic(config || createDefaultConfig());
+  if (config) renderAll(config);
+}
+
+function updateEnterGateCopy(cfg) {
+  const textEl = $('#enter-text');
+  const hintEl = $('#enter-hint');
+  if (!textEl) return;
+
+  const text = cfg.site?.enterText || 'click to unlock yourself';
+  const hint = cfg.site?.enterHint || 'tap anywhere · you\'re clear to enter';
+
+  if (hintEl) hintEl.textContent = hint;
+
+  if (typewriterTimer) clearTimeout(typewriterTimer);
   textEl.textContent = '';
   let i = 0;
   const type = () => {
     if (i < text.length) {
       textEl.textContent += text[i++];
-      setTimeout(type, 55 + Math.random() * 40);
+      typewriterTimer = setTimeout(type, 45 + Math.random() * 35);
     }
   };
   type();
+}
 
-  gate.addEventListener('click', () => {
-    gate.classList.add('dismissed');
-    $('#app')?.classList.add('ready');
-    $('#app')?.classList.remove('app-hidden');
-    initMusic(cfg);
-  }, { once: true });
+function setupEnterGate(cfg) {
+  updateEnterGateCopy(cfg);
 }
 
 /* ── Theme ── */
@@ -548,4 +583,7 @@ function formatTime(iso) {
   return d.toLocaleDateString();
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+  wireEnterGate();
+  init();
+});
