@@ -4,7 +4,7 @@
 import {
   getConfig, replaceConfig, saveConfigToSupabase, revertToLastSaved, uploadFile, subscribe,
 } from './state.js';
-import { THEMES, THEME_KEYS, AVATAR_FRAMES, AVATAR_FRAME_KEYS, DEFAULT_THEME_EFFECTS } from './defaults.js';
+import { THEMES, THEME_GROUPS, AVATAR_FRAMES, AVATAR_FRAME_KEYS, DEFAULT_THEME_EFFECTS } from './defaults.js';
 import { uid, $, $$, showToast, escapeHtml } from './utils.js';
 import { signOut, getSiteUser } from './auth.js';
 import { getVisibleSections, ADMIN_GROUPS } from './permissions.js';
@@ -187,15 +187,22 @@ function label(s) {
 
 function renderTheme(c) {
   const fx = c.theme?.effects || DEFAULT_THEME_EFFECTS;
-  const presets = THEME_KEYS.map(k => {
-    const t = THEMES[k];
-    return `<div class="theme-preset ${c.theme.preset === k ? 'active' : ''}" data-theme="${k}">
-      <div class="theme-preset-swatch" style="background:${t.swatch}"></div>
-      <div class="theme-preset-name">${t.name}</div></div>`;
-  }).join('');
+  const presets = THEME_GROUPS.map(g => `
+    <div class="theme-group">
+      <h4 class="theme-group-label">${g.label}</h4>
+      <div class="theme-presets theme-presets-wide">
+        ${g.keys.map(k => {
+          const t = THEMES[k];
+          if (!t) return '';
+          return `<div class="theme-preset ${c.theme.preset === k ? 'active' : ''}" data-theme="${k}">
+            <div class="theme-preset-swatch" style="background:${t.swatch}"></div>
+            <div class="theme-preset-name">${t.name}</div></div>`;
+        }).join('')}
+      </div>
+    </div>`).join('');
   return `<h3>Neon Themes</h3>
-    <p class="admin-hint">Girly neon vibes — pick a preset. Hit Save to apply site-wide.</p>
-    <div class="theme-presets theme-presets-wide">${presets}</div>
+    <p class="admin-hint">Pick a vibe — Basic Neon, Sunsets, Galaxies, Moonlights, or Foggy Forest. Hit Save to apply site-wide.</p>
+    <div class="theme-groups">${presets}</div>
     <div class="admin-divider"></div>
     <h4>Neon outline effects</h4>
     <p class="admin-hint">Animated glows on the profile box, nav bar, and content panels. Clean neon — no weird pulsing buttons.</p>
@@ -209,11 +216,21 @@ function renderTheme(c) {
 
 function renderMedia(c) {
   const avPrev = c.profile.avatar ? `<img src="${esc(c.profile.avatar)}" class="admin-preview-img" alt="" />` : '';
+  const bgSize = c.theme.customBgSize || 'cover';
   return `<h3>Backgrounds & Uploads</h3>
-    <p class="admin-hint">Profile: <strong>512×512</strong> · Background: <strong>1920×1080</strong></p>
+    <p class="admin-hint">Profile: <strong>512×512</strong> · Background: <strong>1920×1080</strong> (GIFs & MP4/WebM supported)</p>
     <div class="form-group"><label>Custom Background URL</label>
       <input class="form-input" id="bg-url" value="${esc(c.theme.customBg)}" placeholder="https://... or upload" />
-      <input type="file" accept="image/*,.gif" id="bg-upload" class="form-file" />
+      <input type="file" accept="image/*,.gif,video/mp4,video/webm" id="bg-upload" class="form-file" />
+    </div>
+    <div class="form-group"><label>Background size</label>
+      <select class="form-input" id="bg-size">
+        <option value="cover" ${bgSize === 'cover' ? 'selected' : ''}>Cover — fill screen</option>
+        <option value="contain" ${bgSize === 'contain' ? 'selected' : ''}>Contain — fit whole image/GIF</option>
+        <option value="100% 100%" ${bgSize === '100% 100%' ? 'selected' : ''}>Stretch — edge to edge</option>
+        <option value="auto" ${bgSize === 'auto' ? 'selected' : ''}>Auto — natural size</option>
+      </select>
+      <p class="admin-hint">Use <strong>Contain</strong> for tall GIFs; <strong>Cover</strong> for wallpapers.</p>
     </div>
     <div class="form-group"><label>Profile Photo URL</label>
       <input class="form-input" id="avatar-url" value="${esc(c.profile.avatar)}" />
@@ -284,9 +301,13 @@ function renderHome(c) {
       <input class="form-input" id="home-ql-title" value="${esc(h.quickLinksTitle || 'Quick Links')}" /></div>
     <div class="sortable-list" id="ql-list">${links || '<p class="admin-hint">No quick links yet</p>'}</div>
     <button class="admin-btn admin-btn-neon admin-btn-sm" id="add-q-link">+ Add Quick Link</button>
-    <div class="form-group" style="margin-top:16px"><label>Promotions teaser (underlined link on Home)</label>
-      <input class="form-input" id="home-promo-cta" value="${esc(h.promoCtaText || '')}"
-        placeholder="Want more info? Check out Promotions" /></div>`;
+    <div class="form-group" style="margin-top:16px"><label>Promotions teaser prefix</label>
+      <input class="form-input" id="home-promo-prefix" value="${esc(h.promoCtaPrefix ?? 'Want more info? Check out ')}"
+        placeholder="Want more info? Check out " /></div>
+    <div class="form-group"><label>Promotions link text (highlighted)</label>
+      <input class="form-input" id="home-promo-link" value="${esc(h.promoCtaLinkText ?? 'Promotions')}"
+        placeholder="Promotions" />
+      <p class="admin-hint">Leave both blank to hide the teaser on Home.</p></div>`;
 }
 
 function renderPromos(c) {
@@ -377,6 +398,7 @@ function bindSection(sec) {
 
 function bindMedia() {
   $('#bg-url')?.addEventListener('input', e => { draft.theme.customBg = e.target.value; });
+  $('#bg-size')?.addEventListener('change', e => { draft.theme.customBgSize = e.target.value; });
   $('#avatar-url')?.addEventListener('input', e => { draft.profile.avatar = e.target.value; });
   $('#clear-bg')?.addEventListener('click', () => { draft.theme.customBg = ''; renderSection(); });
   $('#bg-upload')?.addEventListener('change', async e => {
@@ -467,7 +489,8 @@ function bindHome() {
   if (!draft.home) draft.home = {};
   $('#home-about')?.addEventListener('input', e => { draft.home.aboutBody = e.target.value; });
   $('#home-ql-title')?.addEventListener('input', e => { draft.home.quickLinksTitle = e.target.value; });
-  $('#home-promo-cta')?.addEventListener('input', e => { draft.home.promoCtaText = e.target.value; });
+  $('#home-promo-prefix')?.addEventListener('input', e => { draft.home.promoCtaPrefix = e.target.value; });
+  $('#home-promo-link')?.addEventListener('input', e => { draft.home.promoCtaLinkText = e.target.value; });
   $('#add-q-link')?.addEventListener('click', () => {
     if (!draft.home.quickLinks) draft.home.quickLinks = [];
     draft.home.quickLinks.push({ id: uid(), title: 'New Link', subtitle: '', url: 'https://', accent: '#b57bff', visible: true });

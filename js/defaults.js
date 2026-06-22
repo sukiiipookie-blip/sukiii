@@ -182,7 +182,135 @@ export const THEMES = {
       '--name-grad': 'linear-gradient(90deg,#a7f3d0,#6ee7b7,#a78bfa)',
     },
   },
+  neonMoonlight: {
+    name: 'Neon Moonlight',
+    swatch: 'linear-gradient(135deg,#c4b5fd,#818cf8,#312e81)',
+    bg: 'radial-gradient(ellipse 90% 60% at 50% 0%, rgba(129,140,248,.32), transparent), radial-gradient(ellipse 40% 35% at 80% 100%, rgba(49,46,129,.45), transparent), linear-gradient(180deg,#050510,#0a0a1e)',
+    vars: {
+      '--accent': '#818cf8',
+      '--accent-2': '#c4b5fd',
+      '--accent-glow': 'rgba(129,140,248,.5)',
+      '--card-bg': 'rgba(8,8,24,.92)',
+      '--card-border': 'rgba(129,140,248,.4)',
+      '--text': '#eef2ff',
+      '--muted': '#9498c4',
+      '--name-grad': 'linear-gradient(90deg,#e0e7ff,#818cf8,#c4b5fd)',
+    },
+  },
+  goldenSunset: {
+    name: 'Golden Sunset',
+    swatch: 'linear-gradient(135deg,#fcd34d,#f97316,#dc2626)',
+    bg: 'radial-gradient(ellipse 80% 55% at 50% -5%, rgba(251,146,60,.45), transparent), radial-gradient(ellipse 60% 45% at 100% 100%, rgba(220,38,38,.22), transparent), linear-gradient(180deg,#120806,#1a0c08)',
+    vars: {
+      '--accent': '#fb923c',
+      '--accent-2': '#fcd34d',
+      '--accent-glow': 'rgba(251,146,60,.5)',
+      '--card-bg': 'rgba(20,10,8,.9)',
+      '--card-border': 'rgba(251,146,60,.4)',
+      '--text': '#fff8f0',
+      '--muted': '#c4a898',
+      '--name-grad': 'linear-gradient(90deg,#fef3c7,#fb923c,#f97316)',
+    },
+  },
+  emberSunset: {
+    name: 'Ember Sunset',
+    swatch: 'linear-gradient(135deg,#f43f5e,#fb7185,#fda4af)',
+    bg: 'radial-gradient(ellipse 75% 50% at 30% 0%, rgba(244,63,94,.38), transparent), linear-gradient(180deg,#0f0608,#180a10)',
+    vars: {
+      '--accent': '#f43f5e',
+      '--accent-2': '#fda4af',
+      '--accent-glow': 'rgba(244,63,94,.48)',
+      '--card-bg': 'rgba(18,8,12,.9)',
+      '--card-border': 'rgba(251,113,133,.38)',
+      '--text': '#fff5f7',
+      '--muted': '#c4a0a8',
+      '--name-grad': 'linear-gradient(90deg,#fecdd3,#f43f5e,#fb7185)',
+    },
+  },
+  deepGalaxy: {
+    name: 'Deep Galaxy',
+    swatch: 'linear-gradient(135deg,#4c1d95,#7c3aed,#2563eb)',
+    bg: 'radial-gradient(ellipse 70% 55% at 20% 10%, rgba(124,58,237,.35), transparent), radial-gradient(ellipse 55% 45% at 90% 80%, rgba(37,99,235,.25), transparent), linear-gradient(180deg,#030014,#0a0520)',
+    vars: {
+      '--accent': '#7c3aed',
+      '--accent-2': '#60a5fa',
+      '--accent-glow': 'rgba(124,58,237,.52)',
+      '--card-bg': 'rgba(6,4,18,.94)',
+      '--card-border': 'rgba(124,58,237,.42)',
+      '--text': '#ede9fe',
+      '--muted': '#8b7cb8',
+      '--name-grad': 'linear-gradient(90deg,#c4b5fd,#7c3aed,#60a5fa)',
+    },
+  },
+  auroraNight: {
+    name: 'Aurora Night',
+    swatch: 'linear-gradient(135deg,#34d399,#06b6d4,#8b5cf6)',
+    bg: 'radial-gradient(ellipse 80% 45% at 50% 0%, rgba(52,211,153,.28), transparent), radial-gradient(ellipse 50% 40% at 70% 90%, rgba(139,92,246,.28), transparent), linear-gradient(180deg,#040810,#0a1020)',
+    vars: {
+      '--accent': '#34d399',
+      '--accent-2': '#8b5cf6',
+      '--accent-glow': 'rgba(52,211,153,.45)',
+      '--card-bg': 'rgba(6,12,16,.92)',
+      '--card-border': 'rgba(52,211,153,.35)',
+      '--text': '#ecfdf5',
+      '--muted': '#94b8c4',
+      '--name-grad': 'linear-gradient(90deg,#6ee7b7,#34d399,#8b5cf6)',
+    },
+  },
+  foggyForest: {
+    name: 'Foggy Forest',
+    swatch: 'linear-gradient(135deg,#4ade80,#166534,#14532d)',
+    bg: 'radial-gradient(ellipse 80% 50% at 40% 0%, rgba(74,222,128,.18), transparent), radial-gradient(ellipse 60% 50% at 80% 100%, rgba(20,83,45,.35), transparent), linear-gradient(180deg,#060c08,#0a140c)',
+    vars: {
+      '--accent': '#4ade80',
+      '--accent-2': '#86efac',
+      '--accent-glow': 'rgba(74,222,128,.4)',
+      '--card-bg': 'rgba(8,14,10,.92)',
+      '--card-border': 'rgba(74,222,128,.32)',
+      '--text': '#ecfdf5',
+      '--muted': '#86a894',
+      '--name-grad': 'linear-gradient(90deg,#bbf7d0,#4ade80,#166534)',
+    },
+  },
+  midnightRose: {
+    name: 'Midnight Rose',
+    swatch: 'linear-gradient(135deg,#be185d,#881337,#4c0519)',
+    bg: 'radial-gradient(ellipse 70% 50% at 50% 0%, rgba(190,24,93,.3), transparent), linear-gradient(180deg,#0a0408,#140810)',
+    vars: {
+      '--accent': '#ec4899',
+      '--accent-2': '#f472b6',
+      '--accent-glow': 'rgba(236,72,153,.48)',
+      '--card-bg': 'rgba(14,6,10,.92)',
+      '--card-border': 'rgba(236,72,153,.38)',
+      '--text': '#fdf2f8',
+      '--muted': '#c4a0b0',
+      '--name-grad': 'linear-gradient(90deg,#fbcfe8,#ec4899,#be185d)',
+    },
+  },
 };
+
+export const THEME_GROUPS = [
+  {
+    label: '✨ Basic Neon',
+    keys: ['lavenderGalaxy', 'lavenderNeon', 'pinkSolarStorm', 'bubblegumNeon', 'electricPink', 'cherryBlossom', 'coralDream'],
+  },
+  {
+    label: '🌅 Sunsets',
+    keys: ['sunsetFade', 'goldenSunset', 'emberSunset', 'neonPeach'],
+  },
+  {
+    label: '🌌 Galaxies',
+    keys: ['violetHaze', 'deepGalaxy', 'cyberLilac', 'auroraNight'],
+  },
+  {
+    label: '🌙 Moonlights',
+    keys: ['neonMoonlight', 'midnightRose'],
+  },
+  {
+    label: '🌲 Foggy Forest',
+    keys: ['foggyForest', 'mintGlow'],
+  },
+];
 
 export const THEME_KEYS = Object.keys(THEMES);
 
@@ -225,6 +353,7 @@ export function createDefaultConfig() {
     theme: {
       preset: 'lavenderGalaxy',
       customBg: '',
+      customBgSize: 'cover',
       effects: {
         profileGlow: true,
         navGlow: true,
@@ -280,6 +409,8 @@ export function createDefaultConfig() {
         },
       ],
       promoCtaText: 'Want more info? Check out Promotions',
+      promoCtaPrefix: 'Want more info? Check out ',
+      promoCtaLinkText: 'Promotions',
     },
     promotions: [
       {
@@ -362,6 +493,7 @@ export function normalizeSiteConfig(config) {
   }
   if (!config.theme) config.theme = defaults.theme;
   else config.theme = { ...defaults.theme, ...config.theme };
+  if (!config.theme.customBgSize) config.theme.customBgSize = defaults.theme.customBgSize;
   config.theme.effects = { ...DEFAULT_THEME_EFFECTS, ...defaults.theme.effects, ...config.theme.effects };
   if (!config.profile) config.profile = defaults.profile;
   if (!config.badges?.length) config.badges = defaults.badges;

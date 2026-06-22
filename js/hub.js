@@ -13,21 +13,20 @@ import { hasPermission, isOwner } from './permissions.js';
 import { $, showToast, escapeHtml } from './utils.js';
 import { ADMIN_HASH, REGISTER_HASH } from './config.js';
 import { mountSyazHeartGrid } from './syaz-hearts.js';
+import { initSharedMusic, renderMusicBar, shuffleOnTabChange, getCurrentTrack } from './shared-music.js';
 
 let page = 'home';
 let config = null;
-let audio = null;
-let trackIdx = 0;
-let shuffleOrder = [];
 let commentsCache = [];
 let commentsSubscribed = false;
 let syazHeartCleanup = null;
 
 /* ── Bootstrap ── */
 async function init() {
-  config = normalizeSiteConfig(getConfig());
+  config = normalizeSiteConfig(getConfig() || createDefaultConfig());
   applyTheme(config);
   renderAll(config);
+  initSharedMusic(config, updateNowPlaying);
 
   try {
     await initSupabase();
@@ -39,7 +38,7 @@ async function init() {
 
     applyTheme(config);
     renderAll(config);
-    initMusic(config);
+    renderMusicBar(config);
 
     subscribe((c) => {
       config = normalizeSiteConfig(c);
@@ -64,7 +63,7 @@ async function init() {
     config = createDefaultConfig();
     applyTheme(config);
     renderAll(config);
-    initMusic(config);
+    initSharedMusic(config, updateNowPlaying);
   }
 }
 
@@ -118,13 +117,17 @@ function applyTheme(cfg) {
   if (!bg) return;
   if (cfg.theme?.customBg) {
     const url = cfg.theme.customBg;
+    const size = cfg.theme.customBgSize || 'cover';
+    const pos = cfg.theme.customBgPosition || 'center';
     const isVid = /\.(mp4|webm)$/i.test(url);
+    const isGif = /\.gif(\?|$)/i.test(url);
     if (isVid) {
-      bg.innerHTML = `<video autoplay muted loop playsinline style="width:100%;height:100%;object-fit:cover"><source src="${escapeHtml(url)}"></video>`;
+      bg.innerHTML = `<video autoplay muted loop playsinline style="width:100%;height:100%;object-fit:${escapeHtml(size)}"><source src="${escapeHtml(url)}"></video>`;
       bg.style.background = '';
     } else {
       bg.innerHTML = '';
-      bg.style.background = `url(${url}) center/cover no-repeat`;
+      bg.style.background = `url(${url}) ${pos}/${size} no-repeat`;
+      bg.style.backgroundAttachment = isGif ? 'scroll' : 'fixed';
     }
   } else {
     bg.innerHTML = '';
@@ -133,6 +136,14 @@ function applyTheme(cfg) {
 }
 
 /* ── Render all ── */
+function goToPage(next, cfg) {
+  const changed = page !== next;
+  if (syazHeartCleanup) { syazHeartCleanup(); syazHeartCleanup = null; }
+  page = next;
+  renderAll(cfg);
+  if (changed) shuffleOnTabChange(cfg);
+}
+
 function renderAll(cfg) {
   renderNav(cfg);
   renderMain(cfg);
@@ -161,11 +172,7 @@ function renderNav(cfg) {
     </div>
   `;
   nav.querySelectorAll('[data-page]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (syazHeartCleanup) { syazHeartCleanup(); syazHeartCleanup = null; }
-      page = btn.dataset.page;
-      renderAll(cfg);
-    });
+    btn.addEventListener('click', () => goToPage(btn.dataset.page, cfg));
   });
   $('#nav-admin')?.addEventListener('click', () => {
     window.location.href = 'admin.html';
@@ -279,7 +286,7 @@ function renderProfileCard(cfg) {
           </a>
         `).join('')}
       </div>
-      ${home.promoCtaText ? `<button type="button" class="promo-cta-link tab-link" data-page="promotions">${escapeHtml(home.promoCtaText)}</button>` : ''}
+      ${renderPromoCta(home)}
     </div>
   ` : '';
 
@@ -305,6 +312,13 @@ function renderProfileCard(cfg) {
       <div class="profile-socials">${socials}</div>
       ${quickLinksHtml}
     </div>`;
+}
+
+function renderPromoCta(home) {
+  const prefix = home.promoCtaPrefix ?? 'Want more info? Check out ';
+  const link = home.promoCtaLinkText ?? 'Promotions';
+  if (!String(prefix).trim() && !String(link).trim()) return '';
+  return `<p class="promo-cta-text">${escapeHtml(prefix)}<button type="button" class="promo-cta-highlight tab-link" data-page="promotions">${escapeHtml(link)}</button></p>`;
 }
 
 function renderSyazChip(s) {
@@ -339,11 +353,7 @@ function renderSyazPage(cfg) {
 
 function bindSyazChip(root) {
   root.querySelectorAll('[data-page="syaz"]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (syazHeartCleanup) { syazHeartCleanup(); syazHeartCleanup = null; }
-      page = 'syaz';
-      renderAll(config);
-    });
+    btn.addEventListener('click', () => goToPage('syaz', config));
   });
 }
 
@@ -351,9 +361,7 @@ function bindTabLinks(root) {
   root.querySelectorAll('.tab-link[data-page]').forEach(el => {
     el.addEventListener('click', e => {
       e.preventDefault();
-      if (syazHeartCleanup) { syazHeartCleanup(); syazHeartCleanup = null; }
-      page = el.dataset.page;
-      renderAll(config);
+      goToPage(el.dataset.page, config);
     });
   });
 }
@@ -376,9 +384,7 @@ function renderFooter(cfg) {
   foot.querySelectorAll('[data-page]').forEach(a => {
     a.addEventListener('click', e => {
       e.preventDefault();
-      if (syazHeartCleanup) { syazHeartCleanup(); syazHeartCleanup = null; }
-      page = a.dataset.page;
-      renderAll(config);
+      goToPage(a.dataset.page, config);
     });
   });
 }
@@ -447,114 +453,11 @@ document.addEventListener('click', async e => {
   } catch (err) { showToast(err.message, 'error'); }
 });
 
-/* ── Music ── */
-function initMusic(cfg) {
-  renderMusicBar(cfg);
-  if (!cfg.music?.tracks?.length) return;
-  buildShuffle(cfg.music.tracks.length);
-  loadTrack(cfg, 0);
-  if (cfg.music.autoplay) setTimeout(() => playAudio(), 400);
-}
-
-function renderMusicBar(cfg) {
-  const bar = $('#music-bar');
-  if (!bar || !cfg.music?.tracks?.length) { bar?.classList.add('hidden'); return; }
-  bar.classList.remove('hidden');
-  const t = cfg.music.tracks[trackIdx] || cfg.music.tracks[0];
-  const vol = Math.round((cfg.music.volume ?? 0.25) * 100);
-  const playing = audio && !audio.paused;
-  bar.innerHTML = `
-    <button class="music-btn" id="m-prev" title="Previous">${musicIcon('prev')}</button>
-    <button class="music-btn" id="m-play" title="${playing ? 'Pause' : 'Play'}">${musicIcon(playing ? 'pause' : 'play')}</button>
-    <button class="music-btn" id="m-next" title="Next">${musicIcon('next')}</button>
-    <div class="music-info">
-      <div class="music-title">${escapeHtml(t.title)}</div>
-      <div class="music-artist">${escapeHtml(t.artist || '')}</div>
-    </div>
-    <div class="music-vol">
-      <button class="music-btn" id="m-mute" title="Mute">${musicIcon(audio?.muted ? 'mute' : 'vol')}</button>
-      <input type="range" id="m-vol" min="0" max="100" value="${vol}" />
-    </div>
-  `;
-  $('#m-play', bar)?.addEventListener('click', togglePlay);
-  $('#m-prev', bar)?.addEventListener('click', () => changeTrack(cfg, -1));
-  $('#m-next', bar)?.addEventListener('click', () => changeTrack(cfg, 1));
-  $('#m-vol', bar)?.addEventListener('input', e => {
-    const v = e.target.value / 100;
-    if (audio) audio.volume = v;
-    cfg.music.volume = v;
-  });
-  $('#m-mute', bar)?.addEventListener('click', () => {
-    if (!audio) return;
-    audio.muted = !audio.muted;
-    renderMusicBar(cfg);
-  });
-}
-
-function musicIcon(type) {
-  const icons = {
-    prev: '<svg viewBox="0 0 24 24"><path d="M6 6h2v12H6V6zm3.5 6 8.5 6V6l-8.5 6z"/></svg>',
-    play: '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7L8 5z"/></svg>',
-    pause: '<svg viewBox="0 0 24 24"><path d="M6 5h4v14H6V5zm8 0h4v14h-4V5z"/></svg>',
-    next: '<svg viewBox="0 0 24 24"><path d="M16 18h2V6h-2v12zm-11-7 8.5-6v12L5 11z"/></svg>',
-    vol: '<svg viewBox="0 0 24 24"><path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2c0-1.77-1.02-3.29-2.5-4.03v8.06c1.48-.74 2.5-2.26 2.5-4.03z"/></svg>',
-    mute: '<svg viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z"/></svg>',
-  };
-  return icons[type] || '';
-}
-
-function buildShuffle(len) {
-  shuffleOrder = [...Array(len).keys()];
-  for (let i = shuffleOrder.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffleOrder[i], shuffleOrder[j]] = [shuffleOrder[j], shuffleOrder[i]];
-  }
-}
-
-function loadTrack(cfg, idx) {
-  const tracks = cfg.music.tracks;
-  if (!tracks.length) return;
-  trackIdx = ((idx % tracks.length) + tracks.length) % tracks.length;
-  const t = tracks[trackIdx];
-  if (audio) { audio.pause(); audio = null; }
-  audio = new Audio(t.src);
-  audio.volume = cfg.music.volume ?? 0.25;
-  audio.addEventListener('ended', () => changeTrack(cfg, 1));
-  audio.addEventListener('play', updateNowPlaying);
-  updateNowPlaying();
-  renderMusicBar(cfg);
-}
-
-function changeTrack(cfg, dir) {
-  const tracks = cfg.music.tracks;
-  if (tracks.length <= 1) return;
-  let next;
-  if (cfg.music.shuffle) {
-    const pos = shuffleOrder.indexOf(trackIdx);
-    next = shuffleOrder[(pos + dir + shuffleOrder.length) % shuffleOrder.length];
-  } else {
-    next = (trackIdx + dir + tracks.length) % tracks.length;
-  }
-  const wasPlaying = audio && !audio.paused;
-  loadTrack(cfg, next);
-  if (wasPlaying) playAudio();
-}
-
-function togglePlay() {
-  if (!audio) return;
-  if (audio.paused) playAudio();
-  else { audio.pause(); renderMusicBar(config); }
-}
-
-function playAudio() {
-  audio?.play().catch(() => {});
-  renderMusicBar(config);
-}
-
 function updateNowPlaying() {
   const el = $('#now-playing');
-  if (!el || !config?.music?.tracks?.length) return;
-  const t = config.music.tracks[trackIdx];
+  if (!el) return;
+  const t = getCurrentTrack(config);
+  if (!t) return;
   el.textContent = `Now Playing: ${t.title}${t.artist ? ` — ${t.artist}` : ''}`;
 }
 

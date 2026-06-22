@@ -721,11 +721,27 @@
 }
 
 .auth-close {
+  display: block;
+  width: 100%;
   margin-top: 16px;
-  font-size: var(--font-size-sm);
+  padding: 12px 20px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
   color: var(--text-muted);
-  text-decoration: underline;
+  background: rgba(181, 123, 255, 0.08);
+  border: 1px solid rgba(181, 123, 255, 0.32);
   cursor: pointer;
+  text-decoration: none;
+  transition: color 0.2s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.auth-close:hover {
+  color: var(--text-primary);
+  background: rgba(181, 123, 255, 0.18);
+  border-color: rgba(181, 123, 255, 0.55);
+  box-shadow: 0 0 18px var(--accent-glow);
 }
 
 /* ── Item editor modal ── */
@@ -1345,4 +1361,64 @@ body.admin-page .toast {
   .cp-nav-group { flex-direction: row; flex-wrap: wrap; align-items: center; }
   .theme-presets-wide { grid-template-columns: repeat(2, 1fr); }
 }
+
+.theme-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.theme-group-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+/* Music bar — shared with hub */
+body.admin-page .music-bar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6000;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--glass-border);
+  border-radius: 999px;
+  box-shadow: 0 0 24px var(--accent-glow);
+  backdrop-filter: blur(12px);
+  min-width: min(420px, calc(100vw - 32px));
+}
+
+body.admin-page .music-bar.hidden { display: none; }
+
+body.admin-page .music-info { flex: 1; min-width: 0; }
+body.admin-page .music-title { font-size: 0.8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); }
+body.admin-page .music-artist { font-size: 0.7rem; color: var(--text-muted); }
+
+body.admin-page .music-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--glass-border);
+  background: rgba(181, 123, 255, 0.15);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  padding: 0;
+}
+
+body.admin-page .music-btn svg { width: 16px; height: 16px; fill: currentColor; }
+body.admin-page .music-btn:hover { background: rgba(181, 123, 255, 0.3); box-shadow: 0 0 12px var(--accent-glow); }
+
+body.admin-page .music-vol { display: flex; align-items: center; gap: 6px; }
+body.admin-page .music-vol input[type="range"] { width: 72px; accent-color: var(--accent-primary); }
 
