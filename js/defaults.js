@@ -469,9 +469,13 @@ export function createDefaultConfig() {
 
 /** Fix saved configs that still use heavy/sparkle settings */
 export function normalizeSiteConfig(config) {
+  if (!config || typeof config !== 'object') config = createDefaultConfig();
   if (!config.site) config.site = {};
   if (!config.background) config.background = {};
   if (!config.theme) config.theme = {};
+  if (!config.profile) config.profile = createDefaultConfig().profile;
+  if (!config.tabs?.length) config.tabs = createDefaultConfig().tabs;
+  if (!config.navigation) config.navigation = createDefaultConfig().navigation;
 
   if (['sparkle', 'petal', 'dot'].includes(config.site.cursor)) {
     config.site.cursor = 'neon';

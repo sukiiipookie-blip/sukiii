@@ -4,7 +4,7 @@ import {
 import { createDefaultConfig, normalizeSiteConfig } from './defaults.js';
 import { applyTheme } from './theme-engine.js';
 import { initBackgrounds, applyBackground } from './backgrounds.js';
-import { renderSite } from './renderer.js';
+import { renderSite, setNavAdminLoggedIn } from './renderer.js';
 import { initMusicPlayer, updateMusicPlayerTheme } from './music-player.js';
 import { initCursor } from './cursor.js';
 import { initAuth, setAdminReadyCallback, openAdminPanel, showAuthGate, getIsAdmin } from './auth.js';
@@ -17,37 +17,51 @@ let lastMusicKey = '';
 let lastCursor = '';
 
 async function bootstrap() {
-  initBackgrounds();
+  try {
+    initBackgrounds();
 
-  await initSupabase();
-  await initAuth();
+    await initSupabase();
+    await initAuth();
+    setNavAdminLoggedIn(getIsAdmin());
 
-  const fromRemote = await loadConfigFromSupabase();
-  if (!fromRemote) loadConfigFromLocal();
+    const fromRemote = await loadConfigFromSupabase();
+    if (!fromRemote) loadConfigFromLocal();
 
-  const config = normalizeSiteConfig(getConfig());
-  replaceConfig(config);
-  applyAll(config, true);
+    const config = normalizeSiteConfig(getConfig());
+    replaceConfig(config);
+    applyAll(config, true);
 
-  $('#skeleton-loader')?.classList.add('loaded');
+    initVisitors();
 
-  initVisitors();
+    subscribe(debounce((c) => applyAll(normalizeSiteConfig(c)), 120));
 
-  subscribe(debounce((c) => applyAll(normalizeSiteConfig(c)), 120));
+    initAdmin((c) => applyAll(normalizeSiteConfig(c), false));
 
-  initAdmin((c) => applyAll(normalizeSiteConfig(c), false));
+    setAdminReadyCallback(() => {
+      setNavAdminLoggedIn(true);
+      applyAll(normalizeSiteConfig(getConfig()), false);
+      openAdminUI((c) => applyAll(normalizeSiteConfig(c), false));
+      openAdminPanel();
+    });
 
-  setAdminReadyCallback(() => {
-    applyAll(normalizeSiteConfig(getConfig()), false);
-    openAdminUI((c) => applyAll(normalizeSiteConfig(c), false));
-    openAdminPanel();
-  });
-
-  setupAdminAccess();
-  setupAdminNavButton();
-  document.addEventListener('suki:auth-change', () => {
-    applyAll(normalizeSiteConfig(getConfig()), false);
-  });
+    setupAdminAccess();
+    setupAdminNavButton();
+    document.addEventListener('suki:auth-change', () => {
+      setNavAdminLoggedIn(getIsAdmin());
+      applyAll(normalizeSiteConfig(getConfig()), false);
+    });
+  } catch (err) {
+    console.error('Site bootstrap failed:', err);
+    try {
+      const fallback = normalizeSiteConfig(createDefaultConfig());
+      replaceConfig(fallback);
+      applyAll(fallback, true);
+    } catch (fallbackErr) {
+      console.error('Fallback render failed:', fallbackErr);
+    }
+  } finally {
+    $('#skeleton-loader')?.classList.add('loaded');
+  }
 }
 
 function setupAdminNavButton() {
@@ -62,9 +76,13 @@ function setupAdminNavButton() {
 }
 
 function applyAll(config, full = false) {
-  applyTheme(config);
-  applyBackground(config);
-  renderSite(config);
+  try {
+    applyTheme(config);
+    applyBackground(config);
+    renderSite(config);
+  } catch (err) {
+    console.error('Render error:', err);
+  }
 
   const musicKey = JSON.stringify(config.music) + config.site?.showMusicPlayer;
   if (full || musicKey !== lastMusicKey) {

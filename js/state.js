@@ -50,9 +50,14 @@ export function isSupabaseConfigured() {
 
 export async function initSupabase() {
   if (!isSupabaseConfigured()) return null;
-  const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
-  supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  return supabase;
+  try {
+    const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+    supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    return supabase;
+  } catch (err) {
+    console.warn('Supabase client failed to load:', err);
+    return null;
+  }
 }
 
 export function getSupabase() {

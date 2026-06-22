@@ -3,12 +3,16 @@ import { escapeHtml, $ } from './utils.js';
 import { headingClass } from './theme-engine.js';
 import { loadComments, renderCommentsUI, subscribeComments, refreshCommentsList } from './comments.js';
 import { renderVisitorPillHtml, updateVisitorPill, getVisitorCount } from './visitors.js';
-import { getIsAdmin } from './auth.js';
 
 let viewMode = 'home';
 let activeTabId = null;
 let commentsMounted = false;
 let cachedConfig = null;
+let navAdminLoggedIn = false;
+
+export function setNavAdminLoggedIn(loggedIn) {
+  navAdminLoggedIn = Boolean(loggedIn);
+}
 
 export function renderSite(config) {
   cachedConfig = config;
@@ -16,8 +20,9 @@ export function renderSite(config) {
   if (viewMode === 'home') {
     renderProfile(config);
     $('#hero-section')?.classList.remove('hidden');
-    $('#tab-content')?.classList.add('hidden');
-    $('#tab-content').innerHTML = '';
+    const tabEl = $('#tab-content');
+    tabEl?.classList.add('hidden');
+    if (tabEl) tabEl.innerHTML = '';
   } else {
     $('#hero-section')?.classList.add('hidden');
     $('#tab-content')?.classList.remove('hidden');
@@ -60,14 +65,14 @@ function renderNav(config) {
 
   nav.innerHTML = `
     <button class="nav-brand ${viewMode === 'home' ? 'active' : ''}" id="nav-home" type="button" title="Home">
-      <img class="nav-brand-avatar" src="${escapeHtml(config.profile?.avatar || defaultAvatar())}" alt="" />
+      <img class="nav-brand-avatar" src="${safeUrl(config.profile?.avatar || defaultAvatar())}" alt="" />
       <span class="nav-brand-text">${escapeHtml(config.profile?.displayName?.split(' ')[0] || 'Home')}</span>
     </button>
     <button class="nav-mobile-toggle" id="nav-toggle" aria-label="Menu">☰</button>
     <ul class="nav-tabs" id="nav-tabs">
       ${tabsHtml}
       <li class="nav-admin-item">
-        <button class="nav-tab nav-admin-btn ${getIsAdmin() ? 'nav-admin-active' : ''}" id="nav-admin-btn" type="button">${getIsAdmin() ? 'Panel' : 'Admin'}</button>
+        <button class="nav-tab nav-admin-btn ${navAdminLoggedIn ? 'nav-admin-active' : ''}" id="nav-admin-btn" type="button">${navAdminLoggedIn ? 'Panel' : 'Admin'}</button>
       </li>
     </ul>
   `;
@@ -101,7 +106,7 @@ function renderProfile(config) {
   const hero = $('#hero-section');
   if (!hero) return;
 
-  const p = config.profile;
+  const p = config.profile || {};
   const hc = headingClass(config.typography?.headingEffect);
   const avatarBorder = `avatar-border-${p.avatarBorder || 'glow'}`;
   const avatarHover = `avatar-hover-${p.avatarHover || 'float'}`;
@@ -340,6 +345,11 @@ function defaultAvatar() {
       <text x="60" y="72" text-anchor="middle" font-size="48" fill="#fff">♡</text>
     </svg>
   `)}`;
+}
+
+function safeUrl(url) {
+  if (!url) return '';
+  return String(url).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function $$(sel, root) {
