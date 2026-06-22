@@ -119,17 +119,9 @@ body {
   animation: enter-cursor-blink 0.75s step-end infinite;
 }
 
-.enter-glitch-active .enter-cursor {
-  display: none;
-}
-
 @keyframes enter-cursor-blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
-}
-
-.enter-glitch-active {
-  filter: drop-shadow(0 0 24px rgba(181, 123, 255, 0.5));
 }
 
 .enter-hint { display: none !important; }

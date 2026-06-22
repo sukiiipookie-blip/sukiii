@@ -10,20 +10,68 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/hub.css?v=10">
+  <link rel="stylesheet" href="css/hub.css?v=11">
+  <!-- Critical enter-gate styles — works even if external CSS is slow/blocked -->
+  <style>
+    html, body { margin: 0; min-height: 100%; background: #08060f; }
+    #enter-gate {
+      position: fixed; inset: 0; z-index: 9999;
+      display: grid; place-items: center; cursor: pointer;
+    }
+    #enter-gate.dismissed {
+      opacity: 0; visibility: hidden; pointer-events: none;
+    }
+    #enter-gate .enter-blur {
+      position: absolute; inset: 0;
+      background: rgba(72, 48, 120, 0.92);
+    }
+    #enter-gate .enter-inner { position: relative; z-index: 1; text-align: center; padding: 24px; }
+    #enter-gate .enter-typed {
+      color: #ede9fe !important;
+      font: 700 clamp(1.5rem, 5vw, 2.5rem)/1.25 system-ui, sans-serif;
+      text-shadow: 0 0 24px rgba(224, 102, 255, 0.85), 0 2px 12px rgba(0, 0, 0, 0.5);
+    }
+    #enter-gate .enter-cursor {
+      display: inline-block; width: 3px; height: 0.85em; margin-left: 3px;
+      vertical-align: -0.08em; background: #e066ff;
+    }
+    #app.app-hidden { opacity: 0; pointer-events: none; }
+  </style>
 </head>
 <body>
-  <script>
-    try {
-      if (sessionStorage.getItem('suki:entered') === '1') {
-        window.__sukiEntered = true;
-      }
-    } catch (e) {}
-  </script>
-  <!-- Enter gate — inline handler so clicks work even if hub.js is slow/fails -->
+  <!-- Enter gate — self-contained: typewriter + click work without hub.js -->
   <script>
     (function () {
       var ENTER_TEXT = 'Click to see whats waiting for you 💋';
+      var typeTimer = null;
+
+      function startTypewriter() {
+        var el = document.getElementById('enter-typed');
+        if (!el || window.__sukiEntered) return;
+        if (typeTimer) { clearTimeout(typeTimer); typeTimer = null; }
+        el.textContent = '';
+        el.dataset.typing = '1';
+        var chars = Array.from(ENTER_TEXT);
+        var i = 0;
+        function step() {
+          if (window.__sukiEntered) return;
+          if (i < chars.length) {
+            el.textContent += chars[i++];
+            typeTimer = setTimeout(step, 42 + Math.random() * 38);
+          } else {
+            el.dataset.typing = '0';
+            el.dataset.done = '1';
+          }
+        }
+        step();
+      }
+
+      function showLoadingShell() {
+        var main = document.getElementById('hub-main');
+        if (main && !main.innerHTML.trim()) {
+          main.innerHTML = '<div class="page-panel" style="text-align:center;padding:3rem;color:#f5f0ff;font-family:system-ui,sans-serif"><p style="font-size:1.05rem;opacity:0.9">Loading your hub\u2026</p></div>';
+        }
+      }
 
       function enterSite() {
         var gate = document.getElementById('enter-gate');
@@ -33,6 +81,7 @@
         if (app) { app.classList.add('ready'); app.classList.remove('app-hidden'); }
         window.__sukiEntered = true;
         try { sessionStorage.setItem('suki:entered', '1'); } catch (e) {}
+        showLoadingShell();
         document.dispatchEvent(new CustomEvent('suki:enter'));
       }
 
@@ -40,26 +89,45 @@
         var gate = document.getElementById('enter-gate');
         var text = document.getElementById('enter-text');
         if (text) text.setAttribute('data-text', ENTER_TEXT);
-        if (window.__sukiEntered) {
-          enterSite();
-          return;
-        }
         if (!gate || gate.dataset.wired) return;
         gate.dataset.wired = '1';
+        gate.setAttribute('role', 'button');
+        gate.setAttribute('tabindex', '0');
+        gate.setAttribute('aria-label', 'Enter site');
         gate.addEventListener('click', enterSite);
         gate.addEventListener('keydown', function (e) {
           if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); enterSite(); }
         });
+        startTypewriter();
       }
-      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire);
-      else wire();
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', wire);
+      } else {
+        wire();
+      }
+
+      /* If hub.js never loads (Brave shields etc.), undo stale session & show welcome again */
+      setTimeout(function () {
+        if (window.__sukiHubReady) return;
+        try { sessionStorage.removeItem('suki:entered'); } catch (e) {}
+        window.__sukiEntered = false;
+        var gate = document.getElementById('enter-gate');
+        var app = document.getElementById('app');
+        if (gate) gate.classList.remove('dismissed');
+        if (app) { app.classList.add('app-hidden'); app.classList.remove('ready'); }
+        var main = document.getElementById('hub-main');
+        if (main) main.innerHTML = '';
+        startTypewriter();
+      }, 6000);
     })();
   </script>
+
   <div id="enter-gate">
     <div class="enter-blur"></div>
     <div class="enter-inner">
-      <p class="enter-main enter-glitch" id="enter-text" data-text="Click to see whats waiting for you 💋">
-        <span class="enter-typed" id="enter-typed" aria-live="polite">Click to see whats waiting for you 💋</span><span class="enter-cursor" aria-hidden="true"></span>
+      <p class="enter-main" id="enter-text" data-text="Click to see whats waiting for you 💋">
+        <span class="enter-typed" id="enter-typed" aria-live="polite"></span><span class="enter-cursor" aria-hidden="true"></span>
       </p>
     </div>
   </div>
@@ -68,16 +136,13 @@
 
   <div id="app" class="app-hidden">
     <nav class="hub-nav" id="hub-nav"></nav>
-
     <main id="hub-main"></main>
-
     <footer class="hub-footer" id="hub-footer"></footer>
-
     <div class="music-bar hidden" id="music-bar"></div>
   </div>
 
   <div id="toast-container"></div>
 
-  <script type="module" src="js/hub.js?v=10"></script>
+  <script type="module" src="js/hub.js?v=11"></script>
 </body>
 </html>
