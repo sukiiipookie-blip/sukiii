@@ -6,6 +6,7 @@ import {
 } from './users.js';
 import { PERMISSION_LABELS, DEFAULT_ADMIN_PERMISSIONS } from './permissions.js';
 import { loadComments, deleteComment } from './comments.js';
+import { loadAuditLog } from './audit.js';
 
 export function renderUsersSection() {
   return `
@@ -69,6 +70,47 @@ function renderCommentBadgeTemplates(templates) {
       <button class="admin-btn admin-btn-sm admin-btn-danger del-cm-badge" data-idx="${i}">✕</button>
     </div>
   `).join('') || '<p class="admin-hint">No badge templates yet</p>';
+}
+
+function formatPerms(user) {
+  if (user.role === 'owner') return '<span class="perm-tag perm-all">Full access</span>';
+  const perms = user.permissions || {};
+  const active = Object.entries(PERMISSION_LABELS).filter(([k]) =>
+    perms[k] === true || (perms[k] !== false && DEFAULT_ADMIN_PERMISSIONS[k])
+  );
+  if (!active.length) return '<span class="admin-hint">No permissions</span>';
+  return active.map(([, lbl]) => `<span class="perm-tag">${lbl}</span>`).join('');
+}
+
+export function renderAuditSection() {
+  return `<h3>📋 Audit Log</h3>
+    <p class="admin-hint">Owner-only history of config saves and team changes.</p>
+    <div class="admin-divider"></div>
+    <div id="audit-log-list"><p class="admin-hint">Loading…</p></div>`;
+}
+
+export function bindAuditSection() {
+  refreshAuditLog();
+}
+
+export async function refreshAuditLog() {
+  const list = $('#audit-log-list');
+  if (!list) return;
+  try {
+    const entries = await loadAuditLog(60);
+    list.innerHTML = entries.length ? entries.map(e => `
+      <div class="audit-row">
+        <div class="audit-meta">
+          <strong>${escapeHtml(e.action.replace(/_/g, ' '))}</strong>
+          <span class="admin-hint">${new Date(e.created_at).toLocaleString()}</span>
+        </div>
+        <div class="audit-user">${escapeHtml(e.user_email || 'unknown')}</div>
+        ${e.details && Object.keys(e.details).length ? `<div class="audit-details admin-hint">${escapeHtml(JSON.stringify(e.details))}</div>` : ''}
+      </div>
+    `).join('') : '<p class="admin-hint">No audit entries yet — saves will appear here.</p>';
+  } catch (e) {
+    list.innerHTML = `<p class="admin-hint">Audit log unavailable — run the audit_log migration in Supabase SQL editor.</p>`;
+  }
 }
 
 function renderPermCheckboxes(prefix, perms) {
@@ -153,6 +195,7 @@ export async function refreshUsersList() {
           <strong>${escapeHtml(u.display_name || u.email)}</strong>
           <span class="user-role-badge role-${u.role}">${u.role}</span>
           <div class="admin-hint">${escapeHtml(u.email)}</div>
+          <div class="perm-tags">${formatPerms(u)}</div>
         </div>
         <div class="sortable-item-actions">
           ${u.role !== 'owner' ? `

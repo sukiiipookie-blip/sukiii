@@ -1,70 +1,58 @@
-/** All permissions an owner can grant to admins */
+/** Admin permissions — admins get themes + comment mod only; owner gets everything */
 export const PERMISSION_LABELS = {
-  edit_theme: 'Theme & Colors',
-  edit_background: 'Backgrounds',
-  edit_profile: 'Profile',
-  edit_badges: 'Profile Badges',
-  edit_tabs: 'Tabs & Navigation',
-  edit_promotions: 'Promotions',
+  edit_theme: 'Switch Home Themes',
+  moderate_comments: 'Moderate Comments',
+  edit_profile: 'Profile & Name',
+  edit_badges: 'Badges & Icons',
+  edit_content: 'About & Promotions',
   edit_music: 'Music Player',
-  edit_typography: 'Typography',
-  edit_site: 'Site Settings',
-  moderate_comments: 'Delete Comments',
-  edit_comments_settings: 'Comment Badges & Highlights',
+  edit_media: 'Uploads & Backgrounds',
+  manage_users: 'Manage Admins',
 };
 
 export const DEFAULT_ADMIN_PERMISSIONS = {
   edit_theme: true,
-  edit_background: true,
-  edit_profile: true,
-  edit_badges: true,
-  edit_tabs: true,
-  edit_promotions: true,
-  edit_music: true,
-  edit_typography: true,
-  edit_site: false,
   moderate_comments: true,
-  edit_comments_settings: false,
+  edit_profile: false,
+  edit_badges: false,
+  edit_content: false,
+  edit_music: false,
+  edit_media: false,
 };
 
-/** Maps admin panel section id → required permission */
 export const SECTION_PERMISSION = {
   theme: 'edit_theme',
-  background: 'edit_background',
   profile: 'edit_profile',
   badges: 'edit_badges',
-  tabs: 'edit_tabs',
-  promotions: 'edit_promotions',
+  about: 'edit_content',
+  promotions: 'edit_content',
   music: 'edit_music',
-  typography: 'edit_typography',
-  site: 'edit_site',
+  media: 'edit_media',
   comments: 'moderate_comments',
   users: 'manage_users',
+  special: 'manage_users',
 };
 
 export const ADMIN_GROUPS = [
-  { label: 'Design', sections: ['theme', 'background', 'typography'] },
-  { label: 'Content', sections: ['profile', 'badges', 'tabs', 'promotions', 'music'] },
+  { label: 'Design', sections: ['theme', 'media'] },
+  { label: 'Content', sections: ['profile', 'badges', 'about', 'promotions', 'music'] },
   { label: 'Community', sections: ['comments'] },
-  { label: 'Owner', sections: ['users'], ownerOnly: true },
-  { label: 'Settings', sections: ['site'] },
+  { label: 'Owner', sections: ['special', 'users', 'audit'], ownerOnly: true },
 ];
 
-export function isOwner(role) {
-  return role === 'owner';
-}
+export function isOwner(role) { return role === 'owner'; }
 
 export function hasPermission(siteUser, permission) {
   if (!siteUser) return false;
   if (siteUser.role === 'owner') return true;
   if (permission === 'manage_users') return false;
   const perms = siteUser.permissions || {};
-  return perms[permission] !== false && (perms[permission] === true || DEFAULT_ADMIN_PERMISSIONS[permission]);
+  return perms[permission] === true || (perms[permission] !== false && DEFAULT_ADMIN_PERMISSIONS[permission]);
 }
 
 export function canAccessSection(siteUser, sectionId) {
   if (!siteUser) return false;
-  if (sectionId === 'users') return siteUser.role === 'owner';
+  if (sectionId === 'users' || sectionId === 'audit') return siteUser.role === 'owner';
   const perm = SECTION_PERMISSION[sectionId];
   if (!perm) return true;
   return hasPermission(siteUser, perm);
@@ -78,5 +66,5 @@ export function getVisibleSections(siteUser) {
       if (canAccessSection(siteUser, s)) visible.push(s);
     }
   }
-  return visible;
+  return [...new Set(visible)];
 }

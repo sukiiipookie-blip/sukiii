@@ -116,7 +116,10 @@ function renderAuthForm(gate) {
     if (authMode === 'register') registerAccount();
     else signInWithEmail();
   });
-  $('#auth-close-btn', gate)?.addEventListener('click', hideAuthGate);
+  $('#auth-close-btn', gate)?.addEventListener('click', () => {
+    if (document.body.classList.contains('admin-page')) window.location.href = 'index.html';
+    else hideAuthGate();
+  });
 }
 
 export function hideAuthGate() {

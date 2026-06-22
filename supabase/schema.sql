@@ -227,3 +227,26 @@ CREATE TRIGGER on_auth_user_invited
 -- Allow anon visitors to register & read count via RPC only
 GRANT EXECUTE ON FUNCTION public.register_visitor(TEXT) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.get_visitor_count() TO anon, authenticated;
+
+-- ═══════════════════════════════════════════
+-- 6. AUDIT LOG (owner-only read)
+-- ═══════════════════════════════════════════
+
+CREATE TABLE IF NOT EXISTS audit_log (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  user_email TEXT,
+  action TEXT NOT NULL,
+  details JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Owners read audit log" ON audit_log;
+CREATE POLICY "Owners read audit log" ON audit_log FOR SELECT TO authenticated
+  USING (is_owner());
+
+DROP POLICY IF EXISTS "Site users insert audit log" ON audit_log;
+CREATE POLICY "Site users insert audit log" ON audit_log FOR INSERT TO authenticated
+  WITH CHECK (is_site_user());

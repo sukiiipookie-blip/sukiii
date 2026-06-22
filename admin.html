@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control Panel | Suki Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="admin-page">
+  <div id="admin-shell" class="cp-shell hidden">
+    <aside class="cp-sidebar">
+      <div class="cp-brand">
+        <span class="cp-brand-icon">◈</span>
+        <div>
+          <strong>Suki Hub</strong>
+          <span class="cp-brand-sub">Control Panel</span>
+        </div>
+      </div>
+      <nav class="cp-nav" id="admin-nav"></nav>
+      <a href="index.html" class="cp-back-link">← Back to Hub</a>
+    </aside>
+
+    <main class="cp-main">
+      <header class="cp-header">
+        <div>
+          <h1 id="cp-section-title">Dashboard</h1>
+          <p class="cp-role" id="admin-role-label"></p>
+        </div>
+        <div class="cp-header-glow" aria-hidden="true"></div>
+      </header>
+
+      <div class="cp-content" id="admin-content"></div>
+
+      <footer class="cp-footer">
+        <button class="admin-btn admin-btn-primary" id="admin-save">💾 Save Changes</button>
+        <button class="admin-btn admin-btn-secondary" id="admin-revert">↩ Revert</button>
+        <button class="admin-btn admin-btn-secondary" id="admin-signout">Sign Out</button>
+      </footer>
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+  <script type="module" src="js/admin-app.js"></script>
+</body>
+</html>
