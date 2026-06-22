@@ -8,6 +8,34 @@ let audio = null;
 let trackIdx = 0;
 let shuffleOrder = [];
 let onNowPlaying = null;
+let musicCfg = null;
+let unlockBound = false;
+let panelOpen = false;
+
+function tryPlay() {
+  if (!audio) return Promise.resolve(false);
+  return audio.play().then(() => {
+    $('#music-bar')?.classList.remove('needs-tap');
+    return true;
+  }).catch(() => {
+    if (musicCfg?.music?.autoplay) $('#music-bar')?.classList.add('needs-tap');
+    return false;
+  });
+}
+
+function bindAutoplayUnlock(cfg) {
+  if (unlockBound) return;
+  unlockBound = true;
+  musicCfg = cfg;
+  const unlock = () => {
+    if (!audio || !musicCfg) return;
+    if (audio.paused) {
+      tryPlay().then(() => renderMusicBar(musicCfg));
+    }
+  };
+  document.addEventListener('touchstart', unlock, { once: true, passive: true });
+  document.addEventListener('click', unlock, { once: true });
+}
 
 export function getCurrentTrack(cfg) {
   if (!cfg?.music?.tracks?.length) return null;
@@ -39,6 +67,7 @@ function loadSavedState() {
 
 function musicIcon(type) {
   const icons = {
+    note: '<svg viewBox="0 0 24 24"><path d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3h-6z"/></svg>',
     prev: '<svg viewBox="0 0 24 24"><path d="M6 6h2v12H6V6zm3.5 6 8.5 6V6l-8.5 6z"/></svg>',
     play: '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7L8 5z"/></svg>',
     pause: '<svg viewBox="0 0 24 24"><path d="M6 5h4v14H6V5zm8 0h4v14h-4V5z"/></svg>',
@@ -65,23 +94,68 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;');
 }
 
+function toggleMute(cfg) {
+  if (!audio) return;
+  audio.muted = !audio.muted;
+  renderMusicBar(cfg);
+  saveMusicState();
+}
+
 function wireBar(cfg) {
   const bar = $('#music-bar');
   if (!bar) return;
-  $('#m-play', bar)?.addEventListener('click', () => togglePlay(cfg));
-  $('#m-prev', bar)?.addEventListener('click', () => changeTrack(cfg, -1));
-  $('#m-next', bar)?.addEventListener('click', () => changeTrack(cfg, 1));
+
+  $('#m-fab', bar)?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    panelOpen = !panelOpen;
+    bar.classList.toggle('music-bar--open', panelOpen);
+    $('#m-fab', bar)?.setAttribute('aria-expanded', panelOpen ? 'true' : 'false');
+  });
+
+  $('#m-play', bar)?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    togglePlay(cfg);
+  });
+  $('#m-prev', bar)?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    changeTrack(cfg, -1);
+  });
+  $('#m-next', bar)?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    changeTrack(cfg, 1);
+  });
   $('#m-vol', bar)?.addEventListener('input', (e) => {
     const v = e.target.value / 100;
-    if (audio) audio.volume = v;
+    if (audio) {
+      audio.volume = v;
+      if (audio.muted && v > 0) audio.muted = false;
+    }
     cfg.music.volume = v;
     saveMusicState();
   });
-  $('#m-mute', bar)?.addEventListener('click', () => {
-    if (!audio) return;
-    audio.muted = !audio.muted;
-    renderMusicBar(cfg);
-    saveMusicState();
+  $('#m-mute', bar)?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleMute(cfg);
+  });
+  $('#m-speaker-fab', bar)?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleMute(cfg);
+  });
+
+  $('#music-panel', bar)?.addEventListener('click', (e) => e.stopPropagation());
+  $('.music-dock', bar)?.addEventListener('click', (e) => e.stopPropagation());
+}
+
+function bindOutsideClose() {
+  if (window.__sukiMusicOutsideClose) return;
+  window.__sukiMusicOutsideClose = true;
+  document.addEventListener('click', (e) => {
+    if (!panelOpen) return;
+    if (e.target.closest('#music-bar')) return;
+    panelOpen = false;
+    const bar = $('#music-bar');
+    bar?.classList.remove('music-bar--open');
+    $('#m-fab', bar)?.setAttribute('aria-expanded', 'false');
   });
 }
 
@@ -92,22 +166,40 @@ export function renderMusicBar(cfg) {
     return;
   }
   bar.classList.remove('hidden');
+
   const t = cfg.music.tracks[trackIdx] || cfg.music.tracks[0];
   const vol = Math.round((audio?.volume ?? cfg.music.volume ?? 0.25) * 100);
   const playing = audio && !audio.paused;
+  const muted = audio?.muted;
+  const speakerIcon = muted ? 'mute' : 'vol';
+
   bar.innerHTML = `
-    <button class="music-btn" id="m-prev" title="Previous">${musicIcon('prev')}</button>
-    <button class="music-btn" id="m-play" title="${playing ? 'Pause' : 'Play'}">${musicIcon(playing ? 'pause' : 'play')}</button>
-    <button class="music-btn" id="m-next" title="Next">${musicIcon('next')}</button>
-    <div class="music-info">
-      <div class="music-title">${escapeHtml(t.title)}</div>
-      <div class="music-artist">${escapeHtml(t.artist || '')}</div>
+    <div class="music-dock">
+      <button type="button" class="music-fab ${playing && !muted ? 'music-fab--playing' : ''}" id="m-fab" aria-expanded="${panelOpen}" title="Music controls">
+        <span class="music-fab-glow" aria-hidden="true"></span>
+        ${musicIcon('note')}
+      </button>
+      <button type="button" class="music-speaker-fab" id="m-speaker-fab" title="${muted ? 'Unmute' : 'Mute'}">${musicIcon(speakerIcon)}</button>
     </div>
-    <div class="music-vol">
-      <button class="music-btn" id="m-mute" title="Mute">${musicIcon(audio?.muted ? 'mute' : 'vol')}</button>
-      <input type="range" id="m-vol" min="0" max="100" value="${vol}" />
+    <div class="music-panel" id="music-panel">
+      <div class="music-transport">
+        <button type="button" class="music-btn" id="m-prev" title="Previous">${musicIcon('prev')}</button>
+        <button type="button" class="music-btn" id="m-play" title="${playing ? 'Pause' : 'Play'}">${musicIcon(playing ? 'pause' : 'play')}</button>
+        <button type="button" class="music-btn" id="m-next" title="Next">${musicIcon('next')}</button>
+      </div>
+      <div class="music-info">
+        <div class="music-title">${escapeHtml(t.title)}</div>
+        <div class="music-artist">${escapeHtml(t.artist || '')}</div>
+      </div>
+      <div class="music-vol">
+        <button type="button" class="music-btn music-speaker-btn" id="m-mute" title="${muted ? 'Unmute' : 'Mute'}">${musicIcon(speakerIcon)}</button>
+        <input type="range" id="m-vol" min="0" max="100" value="${vol}" aria-label="Volume" />
+      </div>
     </div>
   `;
+
+  bar.classList.toggle('music-bar--open', panelOpen);
+  bar.classList.toggle('music-bar--muted', muted);
   wireBar(cfg);
 }
 
@@ -129,7 +221,7 @@ function loadTrack(cfg, idx, resumeTime = 0, autoPlay = false) {
   audio.addEventListener('timeupdate', saveMusicState);
   renderMusicBar(cfg);
   onNowPlaying?.();
-  if (wasPlaying) audio.play().catch(() => {});
+  if (wasPlaying) tryPlay();
   saveMusicState();
 }
 
@@ -163,7 +255,7 @@ export function shuffleOnTabChange(cfg) {
 function togglePlay(cfg) {
   if (!audio) return;
   if (audio.paused) {
-    audio.play().catch(() => {});
+    tryPlay();
   } else {
     audio.pause();
   }
@@ -173,6 +265,9 @@ function togglePlay(cfg) {
 
 export function initSharedMusic(cfg, nowPlayingFn) {
   onNowPlaying = nowPlayingFn || null;
+  musicCfg = cfg;
+  bindAutoplayUnlock(cfg);
+  bindOutsideClose();
   if (audio) {
     renderMusicBar(cfg);
     return;

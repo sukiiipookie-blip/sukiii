@@ -1,7 +1,9 @@
-/** Heart grid — dense field with literal S-outline pulse wave */
+/** Heart grid — S-outline pulse wave (lighter on mobile) */
 
-const COLS = 32;
-const ROWS = 24;
+function gridSize() {
+  const mobile = window.matchMedia('(max-width: 768px), (pointer: coarse)').matches;
+  return mobile ? { cols: 18, rows: 14, lite: true } : { cols: 32, rows: 24, lite: false };
+}
 
 /** Points along a readable letter S (normalized 0–1) */
 function sLetterPoint(t) {
@@ -40,55 +42,69 @@ function nearestOnS(nx, ny) {
 
 export function mountSyazHeartGrid(container) {
   if (!container) return () => {};
+  const { cols: COLS, rows: ROWS, lite } = gridSize();
+
   container.innerHTML = '';
   container.classList.add('syaz-heart-grid');
+  if (lite) container.classList.add('syaz-heart-grid-lite');
   container.style.setProperty('--cols', COLS);
   container.style.setProperty('--rows', ROWS);
 
   const hearts = [];
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
+      const nx = c / (COLS - 1);
+      const ny = r / (ROWS - 1);
+      const { t, dist } = nearestOnS(nx, ny);
       const el = document.createElement('span');
       el.className = 'syaz-grid-heart';
       el.textContent = '♥';
-      el.dataset.c = c;
-      el.dataset.r = r;
       container.appendChild(el);
-      hearts.push(el);
+      hearts.push({
+        el,
+        t,
+        onS: Math.max(0, 1 - dist / 0.1),
+        c,
+        r,
+      });
     }
   }
 
   let phase = 0;
   let running = true;
+  let frameSkip = 0;
 
   function tick() {
     if (!running) return;
-    phase += 0.32;
+    frameSkip += 1;
+    if (lite && frameSkip % 2 !== 0) {
+      requestAnimationFrame(tick);
+      return;
+    }
+
+    phase += lite ? 0.28 : 0.32;
     const waveT = (phase * 0.0028) % 1;
 
-    hearts.forEach((el) => {
-      const c = +el.dataset.c;
-      const r = +el.dataset.r;
-      const nx = c / (COLS - 1);
-      const ny = r / (ROWS - 1);
-      const { t, dist } = nearestOnS(nx, ny);
-
-      const onS = Math.max(0, 1 - dist / 0.1);
-      let dt = Math.abs(t - waveT);
+    for (const h of hearts) {
+      let dt = Math.abs(h.t - waveT);
       dt = Math.min(dt, 1 - dt);
       const wave = Math.max(0, 1 - dt / 0.09);
-      const shimmer = 0.42 + 0.58 * Math.sin(phase * 0.028 + c * 0.22 + r * 0.18);
-
-      const pulse = onS * wave;
+      const shimmer = 0.42 + 0.58 * Math.sin(phase * 0.028 + h.c * 0.22 + h.r * 0.18);
+      const pulse = h.onS * wave;
       const base = 0.28 + shimmer * 0.35 + pulse * 0.55;
+      const scale = 0.68 + pulse * 0.5 + shimmer * 0.08;
 
-      el.style.opacity = Math.min(1, base);
-      el.style.color = pulse > 0.35 ? '#fff' : 'rgba(220, 180, 255, 0.92)';
-      el.style.transform = `scale(${0.68 + pulse * 0.5 + shimmer * 0.08})`;
-      el.style.filter = pulse > 0.3
-        ? `drop-shadow(0 0 ${5 + pulse * 10}px rgba(255,140,220,${0.5 + pulse * 0.5}))`
-        : 'drop-shadow(0 0 2px rgba(255,107,203,0.15)';
-    });
+      h.el.style.opacity = Math.min(1, base);
+      h.el.style.transform = `scale(${scale})`;
+      if (lite) {
+        h.el.style.color = pulse > 0.35 ? '#fff' : 'rgba(220, 180, 255, 0.92)';
+      } else {
+        h.el.style.color = pulse > 0.35 ? '#fff' : 'rgba(220, 180, 255, 0.92)';
+        h.el.style.filter = pulse > 0.3
+          ? `drop-shadow(0 0 ${5 + pulse * 10}px rgba(255,140,220,${0.5 + pulse * 0.5}))`
+          : 'drop-shadow(0 0 2px rgba(255,107,203,0.15)';
+      }
+    }
 
     requestAnimationFrame(tick);
   }
@@ -97,5 +113,6 @@ export function mountSyazHeartGrid(container) {
   return () => {
     running = false;
     container.innerHTML = '';
+    container.classList.remove('syaz-heart-grid-lite');
   };
 }
