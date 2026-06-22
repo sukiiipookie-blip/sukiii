@@ -136,8 +136,32 @@ export async function uploadFile(bucket, path, file) {
   if (!supabase) {
     return URL.createObjectURL(file);
   }
-  const { error } = await supabase.storage.from(bucket).upload(path, file, { upsert: true });
-  if (error) throw new Error(error.message);
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    throw new Error('Session expired — sign out and sign back in, then try again.');
+  }
+
+  const { error } = await supabase.storage.from(bucket).upload(path, file, {
+    upsert: true,
+    contentType: file.type || undefined,
+  });
+
+  if (error) {
+    const msg = error.message || '';
+    if (/row-level security|RLS|policy/i.test(msg)) {
+      throw new Error(
+        'Upload blocked by Supabase storage permissions. Open Supabase → SQL Editor, run supabase/storage.sql, then try again.'
+      );
+    }
+    if (/bucket.*not found|Bucket not found/i.test(msg)) {
+      throw new Error(
+        `Storage bucket "${bucket}" is missing. Run supabase/storage.sql in the Supabase SQL Editor.`
+      );
+    }
+    throw new Error(msg);
+  }
+
   const { data } = supabase.storage.from(bucket).getPublicUrl(path);
   return data.publicUrl;
 }

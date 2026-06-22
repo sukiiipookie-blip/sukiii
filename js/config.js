@@ -3,6 +3,7 @@
  * 1. Create a project at https://supabase.com/dashboard
  * 2. Copy Project URL + anon public key into the values below
  * 3. Run supabase/schema.sql in the SQL Editor
+ * 4. Run supabase/storage.sql (required for avatar/background/music uploads)
  */
 export const SUPABASE_URL = 'https://klnmphyscamehhoaudfn.supabase.co';
 export const SUPABASE_ANON_KEY = 'sb_publishable_IHaKkecqmpIn3ILmAjbjlw_00T-2QyY';

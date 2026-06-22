@@ -408,7 +408,13 @@ function bindMedia() {
   });
   $('#avatar-upload')?.addEventListener('change', async e => {
     const f = e.target.files?.[0]; if (!f) return;
-    try { draft.profile.avatar = await uploadFile('avatars', `av-${Date.now()}.jpg`, f); renderSection(); showToast('Avatar uploaded!'); }
+    const ext = (f.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    const safeExt = ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext) ? ext : 'jpg';
+    try {
+      draft.profile.avatar = await uploadFile('avatars', `av-${Date.now()}.${safeExt}`, f);
+      renderSection();
+      showToast('Avatar uploaded!');
+    }
     catch (err) { showToast(err.message, 'error'); }
   });
 }
