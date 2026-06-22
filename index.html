@@ -4,15 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Suki | Personal Site</title>
-  <meta name="build-version" content="4">
+  <meta name="build-version" content="5">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/variables.css?v=4">
-  <link rel="stylesheet" href="css/base.css?v=4">
-  <link rel="stylesheet" href="css/components.css?v=4">
-  <link rel="stylesheet" href="css/admin.css?v=4">
-  <link rel="stylesheet" href="css/animations.css?v=4">
+  <link rel="stylesheet" href="css/variables.css?v=5">
+  <link rel="stylesheet" href="css/base.css?v=5">
+  <link rel="stylesheet" href="css/components.css?v=5">
+  <link rel="stylesheet" href="css/admin.css?v=5">
+  <link rel="stylesheet" href="css/animations.css?v=5">
 </head>
 <body>
   <div id="skeleton-loader">
@@ -35,6 +35,32 @@
 
   <div id="toast-container"></div>
 
-  <script type="module" src="js/app.js?v=4"></script>
+  <!-- Bust cache for all ES module imports (relative imports don't inherit ?v= on app.js) -->
+  <script type="importmap">
+  {
+    "scopes": {
+      "/js/": {
+        "./admin-owner.js": "/js/admin-owner.js?v=5",
+        "./admin.js": "/js/admin.js?v=5",
+        "./auth.js": "/js/auth.js?v=5",
+        "./backgrounds.js": "/js/backgrounds.js?v=5",
+        "./comments.js": "/js/comments.js?v=5",
+        "./config.js": "/js/config.js?v=5",
+        "./cursor.js": "/js/cursor.js?v=5",
+        "./defaults.js": "/js/defaults.js?v=5",
+        "./image-crop.js": "/js/image-crop.js?v=5",
+        "./music-player.js": "/js/music-player.js?v=5",
+        "./permissions.js": "/js/permissions.js?v=5",
+        "./renderer.js": "/js/renderer.js?v=5",
+        "./state.js": "/js/state.js?v=5",
+        "./theme-engine.js": "/js/theme-engine.js?v=5",
+        "./users.js": "/js/users.js?v=5",
+        "./utils.js": "/js/utils.js?v=5",
+        "./visitors.js": "/js/visitors.js?v=5"
+      }
+    }
+  }
+  </script>
+  <script type="module" src="js/app.js?v=5"></script>
 </body>
 </html>
