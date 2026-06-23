@@ -5,8 +5,11 @@ import { getSiteUser as getAuthSiteUser } from './auth.js';
 
 let realtimeChannel = null;
 let commentsCache = [];
+let modListenerReady = false;
 
 const NEON_SWATCHES = ['#e066ff', '#b57bff', '#7dffb2', '#ff6bcb', '#66d9ff', '#ffd166', '#ff8a9a', '#c4b5fd'];
+
+const COMMENT_STYLE_ICON = '<svg class="comment-action-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2l2.4 7.4H22l-6 4.6 2.3 7L12 16.8 5.7 21l2.3-7-6-4.6h7.6L12 2z"/></svg>';
 
 export async function loadComments() {
   const supabase = getSupabase();
@@ -147,8 +150,6 @@ export function renderCommentsUI(config, comments, container) {
       showToast(err.message, 'error');
     }
   });
-
-  if (canMod || canStyle) bindModActions(container, canStyle);
 }
 
 function renderCommentItem(c, canMod, canStyle) {
@@ -165,8 +166,8 @@ function renderCommentItem(c, canMod, canStyle) {
         ${roleBadge}${badges}
         <span class="comment-time">${formatTime(c.created_at)}</span>
         ${canMod || canStyle ? `<div class="comment-actions">
-          ${canStyle ? `<button type="button" class="comment-action-btn style-comment" data-id="${c.id}" title="Highlight & role">✨</button>` : ''}
-          ${canMod ? `<button type="button" class="comment-action-btn delete-comment" data-id="${c.id}" title="Delete">✕</button>` : ''}
+          ${canStyle ? `<button type="button" class="comment-action-btn style-comment" data-id="${c.id}" title="Highlight & role" aria-label="Edit highlight and role">${COMMENT_STYLE_ICON}</button>` : ''}
+          ${canMod ? `<button type="button" class="comment-action-btn delete-comment" data-id="${c.id}" title="Delete" aria-label="Delete comment">✕</button>` : ''}
         </div>` : ''}
       </div>
       <p class="comment-body">${escapeHtml(c.content)}</p>
@@ -180,76 +181,89 @@ function eventEl(e) {
   return el;
 }
 
-function bindModActions(container, canStyle) {
-  container.addEventListener('click', async (e) => {
-    const t = eventEl(e);
-    if (!t) return;
-
-    const del = t.closest('.delete-comment');
-    if (del) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (!confirm('Delete this comment?')) return;
-      try {
-        await deleteComment(del.dataset.id);
-        showToast('Comment deleted');
-      } catch (err) { showToast(err.message, 'error'); }
-      return;
-    }
-
-    const styleBtn = t.closest('.style-comment');
-    const authorBtn = t.closest('.comment-author--admin');
-    const styleId = styleBtn?.dataset.id || authorBtn?.dataset.styleId;
-    if (styleId && canStyle) {
-      e.preventDefault();
-      e.stopPropagation();
-      await openCommentStyleModal(styleId);
-    }
-  });
-
-  container.addEventListener('mousedown', (e) => {
-    const t = eventEl(e);
-    if (t?.closest('.style-comment, .delete-comment, .comment-author--admin')) {
-      e.preventDefault();
-    }
-  });
-
-  container.addEventListener('keydown', (e) => {
-    if (e.key !== 'Enter' && e.key !== ' ') return;
-    const authorBtn = e.target.closest?.('.comment-author--admin');
-    if (authorBtn && canStyle) {
-      e.preventDefault();
-      void openCommentStyleModal(authorBtn.dataset.styleId);
-    }
-  });
+function initCommentModListener() {
+  if (modListenerReady) return;
+  modListenerReady = true;
+  document.addEventListener('click', handleCommentModClick, true);
+  document.addEventListener('keydown', handleCommentModKeydown);
 }
 
-async function openCommentStyleModal(commentId) {
+function handleCommentModClick(e) {
+  const t = eventEl(e);
+  if (!t?.closest('.comments-wrap')) return;
+
+  const siteUser = getAuthSiteUser();
+  const canMod = canModerate(siteUser);
+  const canStyle = canStyleComments(siteUser);
+
+  const del = t.closest('.delete-comment');
+  if (del) {
+    if (!canMod) return;
+    e.preventDefault();
+    e.stopPropagation();
+    void handleDeleteComment(del.dataset.id);
+    return;
+  }
+
+  const styleBtn = t.closest('.style-comment');
+  const authorBtn = t.closest('.comment-author--admin');
+  const styleId = styleBtn?.dataset.id || authorBtn?.dataset.styleId;
+  if (styleId && canStyle) {
+    e.preventDefault();
+    e.stopPropagation();
+    openCommentStyleModal(styleId);
+  }
+}
+
+function handleCommentModKeydown(e) {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  const authorBtn = e.target.closest?.('.comment-author--admin');
+  if (!authorBtn) return;
+  const siteUser = getAuthSiteUser();
+  if (!canStyleComments(siteUser)) return;
+  e.preventDefault();
+  openCommentStyleModal(authorBtn.dataset.styleId);
+}
+
+async function handleDeleteComment(id) {
+  if (!confirm('Delete this comment?')) return;
+  try {
+    await deleteComment(id);
+    showToast('Comment deleted');
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+function openCommentStyleModal(commentId) {
+  document.getElementById('comment-style-modal')?.remove();
+  document.body.classList.add('comment-modal-open');
+
+  const modal = document.createElement('div');
+  modal.className = 'comment-style-modal';
+  modal.id = 'comment-style-modal';
+  modal.innerHTML = '<div class="comment-style-card comment-style-loading"><p>Opening editor…</p></div>';
+  document.body.appendChild(modal);
+
+  void populateCommentStyleModal(commentId, modal);
+}
+
+async function populateCommentStyleModal(commentId, modal) {
   let comment = commentsCache.find(c => c.id === commentId);
   if (!comment) {
     await loadComments();
     comment = commentsCache.find(c => c.id === commentId);
   }
   if (!comment) {
+    closeCommentModal(modal);
     showToast('Could not open editor for this comment', 'error');
     return;
   }
 
-  document.getElementById('comment-style-modal')?.remove();
-  document.body.classList.add('comment-modal-open');
-
-  const closeModal = (modal) => {
-    modal.remove();
-    document.body.classList.remove('comment-modal-open');
-  };
+  const closeModal = () => closeCommentModal(modal);
 
   const customRole = getCustomRole(comment.badges);
   const currentColor = comment.author_color || comment.highlight_color || '#e066ff';
   const roleColor = customRole?.textColor || currentColor;
 
-  const modal = document.createElement('div');
-  modal.className = 'comment-style-modal';
-  modal.id = 'comment-style-modal';
   modal.innerHTML = `
     <div class="comment-style-card">
       <h3>Edit — ${escapeHtml(comment.author_name)}</h3>
@@ -286,8 +300,6 @@ async function openCommentStyleModal(commentId) {
     </div>
   `;
 
-  document.body.appendChild(modal);
-
   const colorInput = $('#cs-color', modal);
   $('#cs-swatches', modal)?.addEventListener('click', (e) => {
     const sw = e.target.closest('.neon-swatch');
@@ -297,8 +309,8 @@ async function openCommentStyleModal(commentId) {
     if (colorInput) colorInput.value = sw.dataset.color;
   });
 
-  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(modal); });
-  $('#cs-cancel', modal)?.addEventListener('click', () => closeModal(modal));
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  $('#cs-cancel', modal)?.addEventListener('click', () => closeModal());
 
   $('#cs-clear', modal)?.addEventListener('click', async () => {
     try {
@@ -308,7 +320,7 @@ async function openCommentStyleModal(commentId) {
         highlight_color: null,
         badges: (comment.badges || []).filter(b => b.id !== 'custom-role'),
       });
-      closeModal(modal);
+      closeModal();
       showToast('Styling cleared');
     } catch (err) { showToast(err.message, 'error'); }
   });
@@ -338,10 +350,15 @@ async function openCommentStyleModal(commentId) {
         highlight_color: highlighted ? nameColor : null,
         badges,
       });
-      closeModal(modal);
+      closeModal();
       showToast('Comment updated!');
     } catch (err) { showToast(err.message, 'error'); }
   });
+}
+
+function closeCommentModal(modal) {
+  modal?.remove();
+  document.body.classList.remove('comment-modal-open');
 }
 
 function formatTime(iso) {
@@ -367,3 +384,5 @@ export function refreshCommentsList(config, container) {
     ? commentsCache.map(c => renderCommentItem(c, canMod, canStyle)).join('')
     : '<p class="comments-empty">Be the first to leave a message 💜</p>';
 }
+
+initCommentModListener();

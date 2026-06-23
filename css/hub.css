@@ -1059,6 +1059,7 @@ body.fx-panel-glow .comments-wrap {
   max-height: min(52vh, 420px);
   overflow-y: auto;
   overflow-x: hidden;
+  overscroll-behavior: contain;
   padding: 4px 6px 4px 2px;
   margin: 0 -4px;
 }
@@ -1142,17 +1143,29 @@ body.fx-panel-glow .comments-wrap {
 }
 
 .comment-action-btn {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 8px;
   border: 1px solid rgba(181, 123, 255, 0.25);
   background: rgba(181, 123, 255, 0.08);
-  color: var(--text);
+  color: var(--accent-2);
   cursor: pointer;
   font-size: 0.72rem;
   line-height: 1;
   flex-shrink: 0;
+  display: inline-grid;
+  place-items: center;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
   transition: background 0.15s, transform 0.15s;
+}
+
+.comment-action-icon {
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  display: block;
 }
 
 .comment-action-btn:focus {
@@ -1180,12 +1193,19 @@ body.comment-modal-open {
 .comment-style-modal {
   position: fixed;
   inset: 0;
-  z-index: 8000;
+  z-index: 10050;
   display: grid;
   place-items: center;
   padding: 20px;
   background: rgba(4, 2, 10, 0.75);
   backdrop-filter: blur(8px);
+  overscroll-behavior: contain;
+}
+
+.comment-style-loading {
+  text-align: center;
+  color: var(--muted);
+  padding: 32px;
 }
 
 .comment-style-card {

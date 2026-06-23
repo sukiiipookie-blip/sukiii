@@ -44,11 +44,14 @@ export async function initAuth() {
   if (session?.user) await verifyAdmin(session.user);
 
   supabase.auth.onAuthStateChange(async (_event, session) => {
-    if (session?.user) await verifyAdmin(session.user);
-    else {
+    if (session?.user) {
+      const ok = await verifyAdmin(session.user);
+      if (ok) document.dispatchEvent(new CustomEvent('suki:auth-change'));
+    } else {
       isAdmin = false;
       currentUser = null;
       siteUser = null;
+      document.dispatchEvent(new CustomEvent('suki:auth-change'));
     }
   });
 }

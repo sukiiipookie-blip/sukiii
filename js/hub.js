@@ -51,7 +51,13 @@ async function init() {
       window.location.href = 'admin.html';
     });
 
-    document.addEventListener('suki:auth-change', () => renderNav(config));
+    document.addEventListener('suki:auth-change', () => {
+      renderNav(config);
+      if (page === 'comments') {
+        const host = $('#comments-ui-host');
+        if (host) renderCommentsUI(config, commentsCache, host);
+      }
+    });
 
     if (location.hash === `#${ADMIN_HASH}`) {
       if (getIsAdmin()) window.location.href = 'admin.html';
