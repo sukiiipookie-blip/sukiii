@@ -174,10 +174,21 @@ function renderCommentItem(c, canMod, canStyle) {
   `;
 }
 
+function eventEl(e) {
+  let el = e.target;
+  while (el && el.nodeType !== Node.ELEMENT_NODE) el = el.parentElement;
+  return el;
+}
+
 function bindModActions(container, canStyle) {
   container.addEventListener('click', async (e) => {
-    const del = e.target.closest('.delete-comment');
+    const t = eventEl(e);
+    if (!t) return;
+
+    const del = t.closest('.delete-comment');
     if (del) {
+      e.preventDefault();
+      e.stopPropagation();
       if (!confirm('Delete this comment?')) return;
       try {
         await deleteComment(del.dataset.id);
@@ -186,27 +197,51 @@ function bindModActions(container, canStyle) {
       return;
     }
 
-    const styleBtn = e.target.closest('.style-comment');
-    const authorBtn = e.target.closest('.comment-author--admin');
+    const styleBtn = t.closest('.style-comment');
+    const authorBtn = t.closest('.comment-author--admin');
     const styleId = styleBtn?.dataset.id || authorBtn?.dataset.styleId;
-    if (styleId && canStyle) openCommentStyleModal(styleId, container);
+    if (styleId && canStyle) {
+      e.preventDefault();
+      e.stopPropagation();
+      await openCommentStyleModal(styleId);
+    }
+  });
+
+  container.addEventListener('mousedown', (e) => {
+    const t = eventEl(e);
+    if (t?.closest('.style-comment, .delete-comment, .comment-author--admin')) {
+      e.preventDefault();
+    }
   });
 
   container.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
-    const authorBtn = e.target.closest('.comment-author--admin');
+    const authorBtn = e.target.closest?.('.comment-author--admin');
     if (authorBtn && canStyle) {
       e.preventDefault();
-      openCommentStyleModal(authorBtn.dataset.styleId, container);
+      void openCommentStyleModal(authorBtn.dataset.styleId);
     }
   });
 }
 
-function openCommentStyleModal(commentId, container) {
-  const comment = commentsCache.find(c => c.id === commentId);
-  if (!comment) return;
+async function openCommentStyleModal(commentId) {
+  let comment = commentsCache.find(c => c.id === commentId);
+  if (!comment) {
+    await loadComments();
+    comment = commentsCache.find(c => c.id === commentId);
+  }
+  if (!comment) {
+    showToast('Could not open editor for this comment', 'error');
+    return;
+  }
 
   document.getElementById('comment-style-modal')?.remove();
+  document.body.classList.add('comment-modal-open');
+
+  const closeModal = (modal) => {
+    modal.remove();
+    document.body.classList.remove('comment-modal-open');
+  };
 
   const customRole = getCustomRole(comment.badges);
   const currentColor = comment.author_color || comment.highlight_color || '#e066ff';
@@ -262,8 +297,8 @@ function openCommentStyleModal(commentId, container) {
     if (colorInput) colorInput.value = sw.dataset.color;
   });
 
-  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
-  $('#cs-cancel', modal)?.addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(modal); });
+  $('#cs-cancel', modal)?.addEventListener('click', () => closeModal(modal));
 
   $('#cs-clear', modal)?.addEventListener('click', async () => {
     try {
@@ -273,7 +308,7 @@ function openCommentStyleModal(commentId, container) {
         highlight_color: null,
         badges: (comment.badges || []).filter(b => b.id !== 'custom-role'),
       });
-      modal.remove();
+      closeModal(modal);
       showToast('Styling cleared');
     } catch (err) { showToast(err.message, 'error'); }
   });
@@ -303,7 +338,7 @@ function openCommentStyleModal(commentId, container) {
         highlight_color: highlighted ? nameColor : null,
         badges,
       });
-      modal.remove();
+      closeModal(modal);
       showToast('Comment updated!');
     } catch (err) { showToast(err.message, 'error'); }
   });
