@@ -1475,3 +1475,111 @@ body.admin-page .music-btn svg { width: 16px; height: 16px; fill: currentColor; 
 body.admin-page .music-vol { display: flex; align-items: center; gap: 8px; }
 body.admin-page .music-vol input[type="range"] { flex: 1; accent-color: var(--accent-primary); }
 
+/* ── Comments moderation (inline, no popups) ── */
+.mod-comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.mod-comment-card {
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(181, 123, 255, 0.22);
+  background: rgba(181, 123, 255, 0.05);
+}
+
+.mod-comment-top {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.mod-comment-preview {
+  flex: 1;
+  min-width: 0;
+}
+
+.mod-comment-name {
+  font-size: 0.95rem;
+  margin-right: 8px;
+}
+
+.mod-role-preview {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.mod-comment-snippet {
+  margin: 8px 0 4px;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.mod-comment-time {
+  font-size: 0.7rem;
+}
+
+.mod-comment-btns {
+  display: flex;
+  flex-shrink: 0;
+  gap: 6px;
+}
+
+.mod-comment-editor {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(181, 123, 255, 0.18);
+}
+
+.mod-comment-editor.hidden {
+  display: none;
+}
+
+.mod-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+}
+
+.admin-neon-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.admin-neon-swatch {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  background: var(--sw);
+  cursor: pointer;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--sw) 55%, transparent);
+}
+
+.admin-neon-swatch.active {
+  border-color: #fff;
+  transform: scale(1.08);
+}
+
+.mod-comment-editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
