@@ -1,14 +1,14 @@
-import { uid, $, $$, showToast, escapeHtml } from './utils.js?v=30';
-import { getSiteUser, showAuthGate } from './auth.js?v=30';
+import { uid, $, $$, showToast, escapeHtml } from './utils.js';
+import { getSiteUser, showAuthGate } from './auth.js';
 import {
   listSiteUsers, listInvites, createAdminUser, inviteAdmin,
   removeSiteUser, promoteToOwner, updateUserPermissions, cancelInvite,
-} from './users.js?v=30';
-import { PERMISSION_LABELS, DEFAULT_ADMIN_PERMISSIONS } from './permissions.js?v=30';
-import { loadComments, deleteComment, updateComment, getCustomRole } from './comments.js?v=30';
-import { loadAuditLog, logAudit } from './audit.js?v=30';
-import { uploadFile } from './state.js?v=30';
-import { listBannedIps, addBannedIp, removeBannedIp } from './bans.js?v=30';
+} from './users.js';
+import { PERMISSION_LABELS, DEFAULT_ADMIN_PERMISSIONS } from './permissions.js';
+import { loadComments, deleteComment, updateComment, getCustomRole } from './comments.js?v=31';
+import { loadAuditLog, logAudit } from './audit.js';
+import { uploadFile, getSupabase } from './state.js';
+import { listBannedIps, addBannedIp, removeBannedIp } from './bans.js';
 
 export function renderSiteSection(c) {
   const site = c.site || {};
@@ -126,6 +126,10 @@ export function renderCommentsAdminSection(c) {
       <div class="admin-divider"></div>
       ` : ''}
       <h4 style="margin-bottom:12px">Manage Comments</h4>
+      <div class="mod-comments-toolbar">
+        <button type="button" class="admin-btn admin-btn-sm admin-btn-secondary" id="mod-comments-refresh">↻ Refresh list</button>
+        <span class="admin-hint" id="mod-comments-count"></span>
+      </div>
       <div id="mod-comments-list" class="mod-comments-list"><p class="admin-hint">Loading…</p></div>
     </div>
   `;
@@ -227,7 +231,8 @@ export function bindCommentsAdminSection(draftConfig, onApply) {
     apply();
   });
 
-  refreshModCommentsList();
+  $('#mod-comments-refresh')?.addEventListener('click', () => refreshModCommentsList());
+  void refreshModCommentsList();
 }
 
 export async function refreshUsersList() {
@@ -352,14 +357,33 @@ function renderModCommentCard(c) {
 
 async function refreshModCommentsList() {
   const list = $('#mod-comments-list');
+  const countEl = $('#mod-comments-count');
   if (!list) return;
-  const comments = await loadComments();
-  list.innerHTML = comments.slice().reverse().map(c => renderModCommentCard(c)).join('')
-    || '<p class="admin-hint">No comments yet</p>';
 
-  if (!list.dataset.bound) {
-    list.dataset.bound = '1';
-    list.addEventListener('click', handleModCommentListClick);
+  list.innerHTML = '<p class="admin-hint">Loading comments…</p>';
+  if (countEl) countEl.textContent = '';
+
+  try {
+    const supabase = getSupabase();
+    if (!supabase) {
+      list.innerHTML = '<p class="admin-hint mod-comments-error">Could not connect to the database. Refresh the page and sign in again.</p>';
+      return;
+    }
+
+    const comments = await loadComments(true);
+    if (countEl) countEl.textContent = `${comments.length} comment${comments.length === 1 ? '' : 's'}`;
+
+    list.innerHTML = comments.length
+      ? comments.slice().reverse().map(c => renderModCommentCard(c)).join('')
+      : '<p class="admin-hint">No comments yet — post one on the public Comments tab, then hit Refresh.</p>';
+
+    if (!list.dataset.bound) {
+      list.dataset.bound = '1';
+      list.addEventListener('click', handleModCommentListClick);
+    }
+  } catch (err) {
+    console.error('Comments load failed:', err);
+    list.innerHTML = `<p class="admin-hint mod-comments-error">Could not load comments: ${escapeHtml(err.message)}</p>`;
   }
 }
 

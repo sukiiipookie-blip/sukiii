@@ -4,9 +4,11 @@ import { escapeHtml, $, showToast } from './utils.js';
 let realtimeChannel = null;
 let commentsCache = [];
 
-export async function loadComments() {
+export async function loadComments(forceRefresh = false) {
   const supabase = getSupabase();
   if (!supabase) return commentsCache;
+
+  if (forceRefresh) commentsCache = [];
 
   const { data, error } = await supabase
     .from('comments')
@@ -14,7 +16,7 @@ export async function loadComments() {
     .order('created_at', { ascending: true });
   if (error) {
     console.warn('Comments load error:', error.message);
-    return [];
+    throw new Error(error.message);
   }
   commentsCache = data || [];
   return commentsCache;
