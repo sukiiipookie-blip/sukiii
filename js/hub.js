@@ -8,8 +8,9 @@ import {
 } from './state.js';
 import { createDefaultConfig, normalizeSiteConfig, THEMES, AVATAR_FRAMES, DEFAULT_THEME_EFFECTS } from './defaults.js';
 import { initAuth, getIsAdmin, showAuthGate, setAdminReadyCallback, openAdminPanel, getSiteUser } from './auth.js';
-import { loadComments, postComment, deleteComment, subscribeComments } from './comments.js';
-import { hasPermission, isOwner } from './permissions.js';
+import {
+  loadComments, subscribeComments, renderCommentsUI, refreshCommentsList,
+} from './comments.js';
 import { $, showToast, escapeHtml } from './utils.js';
 import { ADMIN_HASH, REGISTER_HASH } from './config.js';
 import { mountSyazHeartGrid } from './syaz-hearts.js';
@@ -394,64 +395,24 @@ async function mountComments(cfg) {
   const root = $('#comments-root');
   if (!root) return;
   commentsCache = await loadComments();
-  const siteUser = getSiteUser();
-  const canMod = siteUser && (isOwner(siteUser.role) || hasPermission(siteUser, 'moderate_comments'));
 
   root.innerHTML = `
     <h1 class="page-title">Comments</h1>
     <p class="page-sub">Leave a message — updates live.</p>
-    <form class="comments-form" id="comment-form">
-      <input id="c-name" placeholder="${escapeHtml(cfg.comments?.namePlaceholder || 'Username')}" maxlength="40" required />
-      <textarea id="c-body" rows="3" placeholder="${escapeHtml(cfg.comments?.placeholder || 'Write a comment...')}" maxlength="${cfg.comments?.maxLength || 500}" required></textarea>
-      <button type="submit">Post Comment</button>
-    </form>
-    <div class="comments-live"><span class="live-dot"></span> Live comments</div>
-    <div class="comments-scroll" id="comments-list">${renderCommentList(canMod)}</div>
+    <div id="comments-ui-host"></div>
   `;
 
-  $('#comment-form', root)?.addEventListener('submit', async e => {
-    e.preventDefault();
-    try {
-      await postComment($('#c-name', root).value, $('#c-body', root).value);
-      $('#c-name', root).value = '';
-      $('#c-body', root).value = '';
-      showToast('Comment posted!');
-    } catch (err) { showToast(err.message, 'error'); }
-  });
+  const host = $('#comments-ui-host', root);
+  renderCommentsUI(cfg, commentsCache, host);
 
   if (!commentsSubscribed) {
     commentsSubscribed = true;
-    subscribeComments(() => {
-      loadComments().then(list => {
-        commentsCache = list;
-        const listEl = $('#comments-list');
-        if (listEl) listEl.innerHTML = renderCommentList(canMod);
-      });
+    subscribeComments(async () => {
+      commentsCache = await loadComments();
+      refreshCommentsList(cfg, host);
     });
   }
 }
-
-function renderCommentList(canMod) {
-  if (!commentsCache.length) return '<p class="comments-empty">Be the first to comment 💜</p>';
-  return commentsCache.map(c => `
-    <div class="comment-item">
-      ${canMod ? `<button class="comment-delete" data-id="${c.id}">✕</button>` : ''}
-      <span class="comment-author">${escapeHtml(c.author_name)}</span>
-      <span class="comment-time">${formatTime(c.created_at)}</span>
-      <p class="comment-body">${escapeHtml(c.content)}</p>
-    </div>
-  `).join('');
-}
-
-document.addEventListener('click', async e => {
-  const btn = e.target.closest('.comment-delete');
-  if (!btn) return;
-  if (!confirm('Delete this comment?')) return;
-  try {
-    await deleteComment(btn.dataset.id);
-    showToast('Deleted');
-  } catch (err) { showToast(err.message, 'error'); }
-});
 
 function updateNowPlaying() {
   const el = $('#now-playing');
@@ -476,15 +437,6 @@ function defaultAvatar() {
 }
 
 function safeAttr(s) { return String(s).replace(/"/g, '&quot;'); }
-
-function formatTime(iso) {
-  const d = new Date(iso);
-  const diff = (Date.now() - d) / 1000;
-  if (diff < 60) return 'just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return d.toLocaleDateString();
-}
 
 let booted = false;
 function boot() {

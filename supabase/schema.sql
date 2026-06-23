@@ -182,6 +182,17 @@ DROP POLICY IF EXISTS "Owner can style comments" ON comments;
 CREATE POLICY "Owner can style comments" ON comments FOR UPDATE TO authenticated
   USING (is_owner());
 
+DROP POLICY IF EXISTS "Mods can style comments" ON comments;
+CREATE POLICY "Mods can style comments" ON comments FOR UPDATE TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM site_users
+      WHERE user_id = auth.uid()
+      AND role = 'admin'
+      AND (permissions->>'moderate_comments')::boolean IS NOT FALSE
+    )
+  );
+
 -- unique_visitors (anon key can register + read count via RPC; direct table locked down)
 DROP POLICY IF EXISTS "No direct visitor reads" ON unique_visitors;
 CREATE POLICY "No direct visitor reads" ON unique_visitors FOR SELECT USING (false);
