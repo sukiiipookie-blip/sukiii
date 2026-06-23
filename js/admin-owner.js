@@ -5,7 +5,7 @@ import {
   removeSiteUser, promoteToOwner, updateUserPermissions, cancelInvite,
 } from './users.js';
 import { PERMISSION_LABELS, DEFAULT_ADMIN_PERMISSIONS } from './permissions.js';
-import { loadComments, deleteComment } from './comments.js';
+import { loadComments, deleteComment, updateComment, getCustomRole } from './comments.js';
 import { loadAuditLog, logAudit } from './audit.js';
 import { uploadFile } from './state.js';
 import { listBannedIps, addBannedIp, removeBannedIp } from './bans.js';
@@ -117,31 +117,18 @@ export function renderCommentsAdminSection(c) {
   return `
     <div class="owner-panel">
       <h3 style="margin-bottom:12px">💬 Comments</h3>
-      <p class="admin-hint">Public guestbook with live updates.${isOwner ? ' As Owner, use ✨ on each comment to highlight names and assign badges.' : ' You can delete inappropriate comments below.'}</p>
+      <p class="admin-hint">Highlight names, assign roles, and delete comments here — no popups, all inline. Changes apply to the public Comments tab immediately.</p>
       <div class="admin-divider"></div>
       ${isOwner ? `
       <div class="form-group"><label>Placeholder text</label><input class="form-input" id="cm-placeholder" value="${esc(cm.placeholder)}" /></div>
       <div class="form-group"><label>Name placeholder</label><input class="form-input" id="cm-name-ph" value="${esc(cm.namePlaceholder)}" /></div>
       <div class="form-group"><label>Max characters</label><input type="number" class="form-input" id="cm-max" value="${cm.maxLength || 500}" min="50" max="1000" /></div>
       <div class="admin-divider"></div>
-      <h4 style="margin-bottom:12px">Comment Badge Templates</h4>
-      <div id="cm-badge-list" class="sortable-list">${renderCommentBadgeTemplates(cm.badgeTemplates)}</div>
-      <button class="admin-btn admin-btn-secondary admin-btn-sm" id="add-cm-badge" style="margin-top:10px">+ Add Badge Template</button>
-      <div class="admin-divider"></div>
       ` : ''}
-      <h4 style="margin-bottom:12px">Moderate Comments</h4>
-      <div id="mod-comments-list"><p class="admin-hint">Loading…</p></div>
+      <h4 style="margin-bottom:12px">Manage Comments</h4>
+      <div id="mod-comments-list" class="mod-comments-list"><p class="admin-hint">Loading…</p></div>
     </div>
   `;
-}
-
-function renderCommentBadgeTemplates(templates) {
-  return (templates || []).map((t, i) => `
-    <div class="sortable-item" data-cm-badge="${i}">
-      <span>${t.icon} ${escapeHtml(t.label)}</span>
-      <button class="admin-btn admin-btn-sm admin-btn-danger del-cm-badge" data-idx="${i}">✕</button>
-    </div>
-  `).join('') || '<p class="admin-hint">No badge templates yet</p>';
 }
 
 function formatPerms(user) {
@@ -240,16 +227,6 @@ export function bindCommentsAdminSection(draftConfig, onApply) {
     apply();
   });
 
-  $('#add-cm-badge')?.addEventListener('click', () => {
-    if (!draftConfig.comments) draftConfig.comments = {};
-    if (!draftConfig.comments.badgeTemplates) draftConfig.comments.badgeTemplates = [];
-    draftConfig.comments.badgeTemplates.push({
-      id: uid(), label: 'New Badge', icon: '✨', gradientFrom: '#c4a0ff', gradientTo: '#f0a8d0',
-    });
-    onApply(draftConfig);
-    window.__rerenderAdmin?.();
-  });
-
   refreshModCommentsList();
 }
 
@@ -321,26 +298,156 @@ export async function refreshUsersList() {
   }
 }
 
+const NEON_SWATCHES = ['#e066ff', '#b57bff', '#7dffb2', '#ff6bcb', '#66d9ff', '#ffd166', '#ff8a9a', '#c4b5fd'];
+
+function renderModCommentCard(c) {
+  const customRole = getCustomRole(c.badges);
+  const color = c.author_color || c.highlight_color || '#e066ff';
+  const roleColor = customRole?.textColor || color;
+  const highlighted = c.is_highlighted || Boolean(c.author_color);
+  const nameStyle = highlighted ? `color:${color};text-shadow:0 0 10px ${color}66` : '';
+
+  return `
+    <div class="mod-comment-card" data-id="${c.id}">
+      <div class="mod-comment-top">
+        <div class="mod-comment-preview">
+          <strong class="mod-comment-name" style="${nameStyle}">${escapeHtml(c.author_name)}</strong>
+          ${customRole ? `<span class="mod-role-preview" style="color:${roleColor};border-color:${roleColor}44">✦ ${escapeHtml(customRole.label)}</span>` : ''}
+          <p class="admin-hint mod-comment-snippet">${escapeHtml(c.content)}</p>
+          <span class="admin-hint mod-comment-time">${new Date(c.created_at).toLocaleString()}</span>
+        </div>
+        <div class="mod-comment-btns">
+          <button type="button" class="admin-btn admin-btn-sm admin-btn-secondary mod-toggle-edit">Edit</button>
+          <button type="button" class="admin-btn admin-btn-sm admin-btn-danger mod-del-comment">Delete</button>
+        </div>
+      </div>
+      <div class="mod-comment-editor hidden">
+        <label class="form-checkbox mod-check">
+          <input type="checkbox" class="mc-highlight" ${highlighted ? 'checked' : ''} />
+          Neon highlight name
+        </label>
+        <div class="form-group">
+          <label>Name color</label>
+          <div class="admin-neon-swatches">
+            ${NEON_SWATCHES.map(s => `<button type="button" class="admin-neon-swatch${s === color ? ' active' : ''}" data-color="${s}" style="--sw:${s}"></button>`).join('')}
+          </div>
+          <input type="color" class="form-color mc-color" value="${color}" />
+        </div>
+        <div class="form-group">
+          <label>Custom role badge</label>
+          <input class="form-input mc-role" placeholder="e.g. VIP, Mod, Bestie" value="${esc(customRole?.label || '')}" maxlength="24" />
+        </div>
+        <div class="form-group">
+          <label>Role color</label>
+          <input type="color" class="form-color mc-role-color" value="${roleColor}" />
+        </div>
+        <div class="mod-comment-editor-actions">
+          <button type="button" class="admin-btn admin-btn-primary mc-save">Apply</button>
+          <button type="button" class="admin-btn admin-btn-secondary mc-clear">Clear styling</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 async function refreshModCommentsList() {
   const list = $('#mod-comments-list');
   if (!list) return;
   const comments = await loadComments();
-  list.innerHTML = comments.slice().reverse().slice(0, 30).map(c => `
-    <div class="sortable-item">
-      <div class="sortable-item-content">
-        <strong>${escapeHtml(c.author_name)}</strong>
-        <div class="admin-hint">${escapeHtml(c.content.slice(0, 80))}${c.content.length > 80 ? '…' : ''}</div>
-      </div>
-      <button class="admin-btn admin-btn-sm admin-btn-danger mod-del-comment" data-id="${c.id}">Delete</button>
-    </div>
-  `).join('') || '<p class="admin-hint">No comments yet</p>';
+  list.innerHTML = comments.slice().reverse().map(c => renderModCommentCard(c)).join('')
+    || '<p class="admin-hint">No comments yet</p>';
 
-  $$('.mod-del-comment', list).forEach(btn => btn.addEventListener('click', async () => {
-    if (!confirm('Delete?')) return;
-    await deleteComment(btn.dataset.id);
-    refreshModCommentsList();
-    showToast('Deleted');
-  }));
+  if (!list.dataset.bound) {
+    list.dataset.bound = '1';
+    list.addEventListener('click', handleModCommentListClick);
+  }
+}
+
+async function handleModCommentListClick(e) {
+  const list = $('#mod-comments-list');
+  if (!list?.contains(e.target)) return;
+
+  const card = e.target.closest('.mod-comment-card');
+  if (!card) return;
+  const id = card.dataset.id;
+
+  if (e.target.closest('.mod-toggle-edit')) {
+    const editor = card.querySelector('.mod-comment-editor');
+    editor?.classList.toggle('hidden');
+    const open = editor && !editor.classList.contains('hidden');
+    const btn = card.querySelector('.mod-toggle-edit');
+    if (btn) btn.textContent = open ? 'Close' : 'Edit';
+    return;
+  }
+
+  if (e.target.closest('.mod-del-comment')) {
+    if (!confirm('Delete this comment?')) return;
+    try {
+      await deleteComment(id);
+      await refreshModCommentsList();
+      showToast('Comment deleted');
+    } catch (err) { showToast(err.message, 'error'); }
+    return;
+  }
+
+  const swatch = e.target.closest('.admin-neon-swatch');
+  if (swatch && card.contains(swatch)) {
+    card.querySelectorAll('.admin-neon-swatch').forEach(s => s.classList.remove('active'));
+    swatch.classList.add('active');
+    const colorInput = card.querySelector('.mc-color');
+    if (colorInput) colorInput.value = swatch.dataset.color;
+    return;
+  }
+
+  if (e.target.closest('.mc-save')) {
+    const highlighted = card.querySelector('.mc-highlight')?.checked || false;
+    const nameColor = card.querySelector('.mc-color')?.value || '#e066ff';
+    const roleLabel = card.querySelector('.mc-role')?.value?.trim();
+    const roleCol = card.querySelector('.mc-role-color')?.value || nameColor;
+    const comments = await loadComments();
+    const comment = comments.find(c => c.id === id);
+    if (!comment) return;
+
+    const otherBadges = (comment.badges || []).filter(b => b.id !== 'custom-role');
+    const badges = [...otherBadges];
+    if (roleLabel) {
+      badges.push({
+        id: 'custom-role',
+        label: roleLabel,
+        textColor: roleCol,
+        bgColor: `${roleCol}22`,
+        icon: '✦',
+      });
+    }
+
+    try {
+      await updateComment(id, {
+        is_highlighted: highlighted,
+        author_color: highlighted ? nameColor : null,
+        highlight_color: highlighted ? nameColor : null,
+        badges,
+      });
+      showToast('Comment updated!');
+      await refreshModCommentsList();
+    } catch (err) { showToast(err.message, 'error'); }
+    return;
+  }
+
+  if (e.target.closest('.mc-clear')) {
+    const comments = await loadComments();
+    const comment = comments.find(c => c.id === id);
+    if (!comment) return;
+    try {
+      await updateComment(id, {
+        is_highlighted: false,
+        author_color: null,
+        highlight_color: null,
+        badges: (comment.badges || []).filter(b => b.id !== 'custom-role'),
+      });
+      showToast('Styling cleared');
+      await refreshModCommentsList();
+    } catch (err) { showToast(err.message, 'error'); }
+  }
 }
 
 function openPermsModal(user, onDone) {

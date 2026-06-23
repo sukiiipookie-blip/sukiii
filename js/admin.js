@@ -8,7 +8,7 @@ import { THEMES, THEME_GROUPS, AVATAR_FRAMES, AVATAR_FRAME_KEYS, DEFAULT_THEME_E
 import { uid, $, $$, showToast, escapeHtml } from './utils.js';
 import { signOut, getSiteUser } from './auth.js';
 import { getVisibleSections, ADMIN_GROUPS } from './permissions.js';
-import { renderUsersSection, bindUsersSection, renderAuditSection, bindAuditSection, renderSiteSection, bindSiteSection, renderBansSection, bindBansSection } from './admin-owner.js';
+import { renderUsersSection, bindUsersSection, renderAuditSection, bindAuditSection, renderSiteSection, bindSiteSection, renderBansSection, bindBansSection, renderCommentsAdminSection, bindCommentsAdminSection } from './admin-owner.js';
 import { logAudit } from './audit.js';
 
 let draft = null;
@@ -136,8 +136,8 @@ function renderSectionContent() {
     return;
   }
   if (section === 'comments') {
-    content.innerHTML = `<div class="cp-section-card"><h3>💬 Comments</h3>
-      <p class="admin-hint">Moderate comments directly on the Comments page. Admins with permission can delete there.</p></div>`;
+    content.innerHTML = `<div class="cp-section-card">${renderCommentsAdminSection(draft)}</div>`;
+    bindCommentsAdminSection(draft, (d) => { draft = d; });
     return;
   }
 
