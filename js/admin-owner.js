@@ -1,14 +1,14 @@
-import { uid, $, $$, showToast, escapeHtml } from './utils.js';
-import { getSiteUser, showAuthGate } from './auth.js';
+import { uid, $, $$, showToast, escapeHtml } from './utils.js?v=30';
+import { getSiteUser, showAuthGate } from './auth.js?v=30';
 import {
   listSiteUsers, listInvites, createAdminUser, inviteAdmin,
   removeSiteUser, promoteToOwner, updateUserPermissions, cancelInvite,
-} from './users.js';
-import { PERMISSION_LABELS, DEFAULT_ADMIN_PERMISSIONS } from './permissions.js';
-import { loadComments, deleteComment, updateComment, getCustomRole } from './comments.js';
-import { loadAuditLog, logAudit } from './audit.js';
-import { uploadFile } from './state.js';
-import { listBannedIps, addBannedIp, removeBannedIp } from './bans.js';
+} from './users.js?v=30';
+import { PERMISSION_LABELS, DEFAULT_ADMIN_PERMISSIONS } from './permissions.js?v=30';
+import { loadComments, deleteComment, updateComment, getCustomRole } from './comments.js?v=30';
+import { loadAuditLog, logAudit } from './audit.js?v=30';
+import { uploadFile } from './state.js?v=30';
+import { listBannedIps, addBannedIp, removeBannedIp } from './bans.js?v=30';
 
 export function renderSiteSection(c) {
   const site = c.site || {};

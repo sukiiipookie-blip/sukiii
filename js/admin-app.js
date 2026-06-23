@@ -4,12 +4,12 @@
 import {
   initSupabase, loadConfigFromSupabase, loadConfigFromLocal,
   getConfig, replaceConfig,
-} from './state.js';
-import { normalizeSiteConfig, createDefaultConfig } from './defaults.js';
-import { initAuth, getIsAdmin, showAuthGate, setAdminReadyCallback } from './auth.js';
-import { initAdminPage } from './admin.js';
-import { ADMIN_HASH, REGISTER_HASH } from './config.js';
-import { initSharedMusic, renderMusicBar } from './shared-music.js';
+} from './state.js?v=30';
+import { normalizeSiteConfig, createDefaultConfig } from './defaults.js?v=30';
+import { initAuth, getIsAdmin, showAuthGate, setAdminReadyCallback } from './auth.js?v=30';
+import { initAdminPage } from './admin.js?v=30';
+import { ADMIN_HASH, REGISTER_HASH } from './config.js?v=30';
+import { initSharedMusic, renderMusicBar } from './shared-music.js?v=30';
 
 let siteConfig = null;
 

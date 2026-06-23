@@ -3,13 +3,13 @@
  */
 import {
   getConfig, replaceConfig, saveConfigToSupabase, revertToLastSaved, uploadFile, subscribe,
-} from './state.js';
-import { THEMES, THEME_GROUPS, AVATAR_FRAMES, AVATAR_FRAME_KEYS, DEFAULT_THEME_EFFECTS } from './defaults.js';
-import { uid, $, $$, showToast, escapeHtml } from './utils.js';
-import { signOut, getSiteUser } from './auth.js';
-import { getVisibleSections, ADMIN_GROUPS } from './permissions.js';
-import { renderUsersSection, bindUsersSection, renderAuditSection, bindAuditSection, renderSiteSection, bindSiteSection, renderBansSection, bindBansSection, renderCommentsAdminSection, bindCommentsAdminSection } from './admin-owner.js';
-import { logAudit } from './audit.js';
+} from './state.js?v=30';
+import { THEMES, THEME_GROUPS, AVATAR_FRAMES, AVATAR_FRAME_KEYS, DEFAULT_THEME_EFFECTS } from './defaults.js?v=30';
+import { uid, $, $$, showToast, escapeHtml } from './utils.js?v=30';
+import { signOut, getSiteUser } from './auth.js?v=30';
+import { getVisibleSections, ADMIN_GROUPS } from './permissions.js?v=30';
+import { renderUsersSection, bindUsersSection, renderAuditSection, bindAuditSection, renderSiteSection, bindSiteSection, renderBansSection, bindBansSection, renderCommentsAdminSection, bindCommentsAdminSection } from './admin-owner.js?v=30';
+import { logAudit } from './audit.js?v=30';
 
 let draft = null;
 let section = 'theme';

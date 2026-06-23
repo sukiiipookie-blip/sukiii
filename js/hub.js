@@ -10,7 +10,7 @@ import { createDefaultConfig, normalizeSiteConfig, THEMES, AVATAR_FRAMES, DEFAUL
 import { initAuth, getIsAdmin, showAuthGate, setAdminReadyCallback, openAdminPanel, getSiteUser } from './auth.js';
 import {
   loadComments, subscribeComments, renderCommentsUI, refreshCommentsList,
-} from './comments.js';
+} from './comments.js?v=30';
 import { $, showToast, escapeHtml } from './utils.js';
 import { ADMIN_HASH, REGISTER_HASH } from './config.js';
 import { mountSyazHeartGrid } from './syaz-hearts.js';
